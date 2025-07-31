@@ -141,9 +141,7 @@
             try {
                 localStorage.setItem('dietDiary', JSON.stringify(data));
                 localStorage.setItem('dietDiaryHistory', JSON.stringify(historyData));
-                // console.log('데이터가 성공적으로 저장되었습니다.'); // 콘솔 로그 제거
             } catch (error) {
-                // console.log('데이터 저장 중 오류 발생:', error); // 콘솔 로그 제거
                 alert('저장 공간이 부족합니다. 일부 데이터를 삭제해주세요.');
             }
         }        function updateTotalCalories() {
@@ -728,16 +726,6 @@
 
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            // 개발 환경 경고 숨기기
-            if (typeof console !== 'undefined') {
-                const noop = function() {};
-                ['log', 'warn', 'error', 'info', 'debug'].forEach(function(method) {
-                    if (console[method] && typeof console[method] === 'function') {
-                        console[method] = noop;
-                    }
-                });
-            }
-            
             initApp();
         });
 
@@ -943,11 +931,6 @@
             const time = document.getElementById('mealTime').value;
             const food = document.getElementById('mealFood').value;
             
-            if (time && food) {
-                // 시계에 마커 추가 로직 (선택사항)
-                // console.log(`${time}에 ${food} 섭취 기록됨`); // 콘솔 로그 제거
-            }
-            
             closeMealModal();
             saveData();
         }
@@ -1071,7 +1054,6 @@
                 });
 
             } catch (error) {
-                // console.log('데이터 로드 중 오류 발생:', error); // 콘솔 로그 제거
                 alert('저장된 데이터를 불러오는 중 오류가 발생했습니다.');
             }
         }
@@ -1566,7 +1548,6 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 // 실제 환경에서는 서비스 워커 파일을 만들어 등록
-                // console.log('PWA 기능을 추가하려면 서비스 워커를 구현하세요.'); // 콘솔 로그 제거
             });
         }
 
