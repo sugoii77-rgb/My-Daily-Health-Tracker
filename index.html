@@ -3,930 +3,615 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다이어트 다이어리</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>지형 탐험 지구본 🌍</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: linear-gradient(135deg, #f5f3ff 0%, #fef7f0 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0c1426 0%, #1a2947 50%, #2d4a69 100%);
+            color: #333;
+            overflow: hidden;
+            font-size: 16px;
         }
-        
-        .glass-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .clock-container {
+
+        .container {
+            display: flex;
+            height: 100vh;
             position: relative;
-            width: 200px;
-            height: 200px;
-            margin: 0 auto;
         }
-        
-        .clock-face {
-            width: 100%;
-            height: 100%;
-            border: 3px solid #e879f9;
-            border-radius: 50%;
+
+        .globe-container {
+            flex: 1;
             position: relative;
-            background: white;
+            min-height: 100vh;
         }
-        
-        .clock-number {
+
+        .info-panel {
+            width: 420px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            overflow-y: auto;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-panel.hidden {
+            transform: translateX(100%);
+        }
+
+        .header {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            top: 25px;
+            left: 25px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 25px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 320px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: #e74c3c;
+        }
+
+        .landform-card {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .landform-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .landform-content {
+            padding: 30px;
+        }
+
+        .landform-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            text-align: center;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .info-section h3 {
+            font-size: 17px;
+            color: #3498db;
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .info-section h3::before {
+            content: "🔍";
+            margin-right: 10px;
+            font-size: 20px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .info-section.climate h3::before {
+            content: "🌤️";
+        }
+
+        .info-section p {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #2c3e50;
+            text-align: justify;
+            background: rgba(52, 152, 219, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid #3498db;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            color: #6b21a8;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
         }
-        
-        .clock-number:hover {
-            background: #f3e8ff;
+
+        .close-btn:hover {
             transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
         }
-        
-        .clock-center {
+
+        .welcome-message {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 18px;
+            line-height: 1.7;
+            padding: 60px 30px;
+        }
+
+        .welcome-message h2 {
+            font-size: 28px;
+            color: #3498db;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .welcome-message .stats {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 25px;
+            font-weight: 600;
+        }
+
+        .loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
-            background: #e879f9;
-            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            z-index: 1000;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
         }
-        
-        .water-cup {
+
+        .loading-spinner {
             width: 40px;
-            height: 50px;
-            border: 2px solid #06b6d4;
-            border-radius: 0 0 8px 8px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: white;
-        }
-        
-        .water-cup.filled {
-            background: linear-gradient(to top, #06b6d4 0%, #67e8f9 100%);
-        }
-        
-        .mood-icon {
-            font-size: 24px;
-            cursor: pointer;
-            padding: 8px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            transition: all 0.3s;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 15px;
         }
-        
-        .mood-icon:hover {
-            background: #f3e8ff;
-            transform: scale(1.1);
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        
-        .mood-icon.selected {
-            background: #e879f9;
+
+        /* 지구본 점 스타일 */
+        .point-label {
+            background: rgba(255, 69, 87, 0.9);
             color: white;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+            white-space: nowrap;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
-        
-        .energy-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            border-radius: 5px;
-            background: #e5e7eb;
-            outline: none;
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .info-panel {
+                width: 100%;
+                height: 60vh;
+                transform: translateY(100%);
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+
+            .info-panel.hidden {
+                transform: translateY(100%);
+            }
+
+            .info-panel:not(.hidden) {
+                transform: translateY(0);
+            }
+
+            .globe-container {
+                height: 100vh;
+            }
+
+            .header {
+                position: relative;
+                margin: 15px;
+                top: 0;
+                left: 0;
+                max-width: none;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .controls {
+                display: none;
+            }
         }
-        
-        .energy-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #e879f9;
-            cursor: pointer;
-        }
-        
-        .tab-button {
-            transition: all 0.3s;
-        }
-        
-        .tab-button.active {
-            background: #e879f9;
-            color: white;
-        }
-        
-        .meal-time-marker {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: #ef4444;
-            border-radius: 50%;
-            border: 2px solid white;
-            cursor: pointer;
+
+        @media (max-height: 600px) {
+            .header {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+                margin-bottom: 5px;
+            }
+            
+            .header p {
+                font-size: 13px;
+            }
         }
     </style>
 </head>
-<body class="min-h-screen p-4">
-    <div class="max-w-6xl mx-auto">
-        <!-- 헤더 -->
-        <div class="glass-card rounded-lg p-6 mb-6 shadow-lg">
-            <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold text-purple-800">💜 다이어트 다이어리</h1>
-                <div class="flex gap-4">
-                    <button id="exportBtn" class="px-4 py-2 bg-green-200 text-green-800 rounded-lg hover:bg-green-300 transition-all">
-                        💾 백업
-                    </button>
-                    <input type="file" id="importFile" accept=".json" style="display: none;">
-                    <button onclick="document.getElementById('importFile').click()" class="px-4 py-2 bg-blue-200 text-blue-800 rounded-lg hover:bg-blue-300 transition-all">
-                        📁 복원
-                    </button>
-                    <button id="langBtn" class="px-4 py-2 bg-purple-200 text-purple-800 rounded-lg hover:bg-purple-300 transition-all">
-                        🌐 EN
-                    </button>
-                    <button id="resetBtn" class="px-4 py-2 bg-red-200 text-red-800 rounded-lg hover:bg-red-300 transition-all">
-                        🔄 초기화
-                    </button>
-                </div>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        🌍 지구본을 준비하고 있어요...
+    </div>
+    
+    <div class="container">
+        <div class="globe-container" id="globeContainer">
+            <div class="header">
+                <h1>🌍 지형 탐험 지구본</h1>
+                <p>지구본의 빨간 점을 클릭해서<br>신비한 지형들을 탐험해보세요!</p>
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn" id="rotateBtn">자동회전 정지</button>
+                <button class="control-btn" id="resetBtn">원래위치</button>
             </div>
         </div>
 
-        <!-- 탭 네비게이션 -->
-        <div class="glass-card rounded-lg p-4 mb-6 shadow-lg">
-            <div class="flex gap-4">
-                <button id="dailyTab" class="tab-button px-6 py-3 rounded-lg font-semibold active">
-                    📆 오늘의 다짐
-                </button>
-                <button id="weeklyTab" class="tab-button px-6 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700">
-                    📅 7일 식단 계획
-                </button>
-            </div>
-        </div>
-
-        <!-- 데일리 화면 -->
-        <div id="dailyView" class="space-y-6">
-            <!-- 날짜 표시 -->
-            <div class="glass-card rounded-lg p-4 shadow-lg">
-                <h2 class="text-xl font-bold text-purple-800 mb-2" id="currentDate"></h2>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 24시간 원형 시계 -->
-                <div class="glass-card rounded-lg p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-purple-800 mb-4">🕐 식사 시간 기록</h3>
-                    <div class="clock-container">
-                        <div class="clock-face" id="clockFace">
-                            <div class="clock-center"></div>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-center">
-                        <p class="text-sm text-gray-600">시간을 클릭하여 식사 기록</p>
-                    </div>
-                </div>
-
-                <!-- 물 섭취량 -->
-                <div class="glass-card rounded-lg p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-purple-800 mb-4">💧 물 섭취량</h3>
-                    <div class="grid grid-cols-4 gap-4 mb-4" id="waterCups">
-                        <!-- 물컵들이 여기에 생성됩니다 -->
-                    </div>
-                    <div class="text-center">
-                        <span class="text-lg font-bold text-blue-600" id="waterCount">0</span> / 8 컵
-                        <p class="text-sm text-gray-600">(총 <span id="waterTotal">0</span>ml)</p>
-                    </div>
+        <div class="info-panel hidden" id="infoPanel">
+            <button class="close-btn" id="closeBtn">×</button>
+            <div class="welcome-message" id="welcomeMessage">
+                <h2>🗻 지형 탐험을 시작해보세요!</h2>
+                <p>지구본에 표시된 <strong>빨간 점들</strong>을 클릭하면<br>세계 곳곳의 멋진 지형들에 대해<br>자세히 알아볼 수 있어요.</p>
+                <div class="stats">
+                    📍 총 10개의 신비한 지형이 기다리고 있어요!
                 </div>
             </div>
-
-            <!-- 식사별 기록 -->
-            <div class="glass-card rounded-lg p-6 shadow-lg">
-                <h3 class="text-lg font-semibold text-purple-800 mb-4">🍽️ 식사 기록</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="meal-section" data-meal="breakfast">
-                        <h4 class="font-semibold text-purple-700 mb-3">🌅 아침</h4>
-                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
-                        <div class="flex gap-1 mb-2" data-field="mood">
-                            <span class="mood-icon" data-mood="1">😣</span>
-                            <span class="mood-icon" data-mood="2">😐</span>
-                            <span class="mood-icon" data-mood="3">🙂</span>
-                            <span class="mood-icon" data-mood="4">😋</span>
-                        </div>
-                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
+            <div class="landform-card" id="landformCard" style="display: none;">
+                <img id="landformImage" class="landform-image" alt="지형 이미지">
+                <div class="landform-content">
+                    <h2 class="landform-title" id="landformTitle"></h2>
+                    <div class="info-section">
+                        <h3>어떻게 만들어졌을까요?</h3>
+                        <p id="landformFormation"></p>
                     </div>
-                    
-                    <div class="meal-section" data-meal="lunch">
-                        <h4 class="font-semibold text-purple-700 mb-3">☀️ 점심</h4>
-                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
-                        <div class="flex gap-1 mb-2" data-field="mood">
-                            <span class="mood-icon" data-mood="1">😣</span>
-                            <span class="mood-icon" data-mood="2">😐</span>
-                            <span class="mood-icon" data-mood="3">🙂</span>
-                            <span class="mood-icon" data-mood="4">😋</span>
-                        </div>
-                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
+                    <div class="info-section climate">
+                        <h3>기후에 미치는 영향</h3>
+                        <p id="landformClimate"></p>
                     </div>
-                    
-                    <div class="meal-section" data-meal="snack">
-                        <h4 class="font-semibold text-purple-700 mb-3">🍪 간식</h4>
-                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
-                        <div class="flex gap-1 mb-2" data-field="mood">
-                            <span class="mood-icon" data-mood="1">😣</span>
-                            <span class="mood-icon" data-mood="2">😐</span>
-                            <span class="mood-icon" data-mood="3">🙂</span>
-                            <span class="mood-icon" data-mood="4">😋</span>
-                        </div>
-                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
-                    </div>
-                    
-                    <div class="meal-section" data-meal="dinner">
-                        <h4 class="font-semibold text-purple-700 mb-3">🌙 저녁</h4>
-                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
-                        <div class="flex gap-1 mb-2" data-field="mood">
-                            <span class="mood-icon" data-mood="1">😣</span>
-                            <span class="mood-icon" data-mood="2">😐</span>
-                            <span class="mood-icon" data-mood="3">🙂</span>
-                            <span class="mood-icon" data-mood="4">😋</span>
-                        </div>
-                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 기타 기록 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- 체중 & 수면 -->
-                <div class="glass-card rounded-lg p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-purple-800 mb-4">⚖️ 체중 & 수면</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">체중 (kg)</label>
-                            <input type="number" step="0.1" placeholder="60.0" class="w-full p-2 border rounded-lg" id="weight">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">수면 시간</label>
-                            <input type="number" step="0.5" placeholder="8.0" class="w-full p-2 border rounded-lg" id="sleep">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 에너지 레벨 -->
-                <div class="glass-card rounded-lg p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-purple-800 mb-4">⚡ 에너지 레벨</h3>
-                    <div class="space-y-4">
-                        <input type="range" min="1" max="5" value="3" class="energy-slider" id="energyLevel">
-                        <div class="flex justify-between text-xs text-gray-600">
-                            <span>😴 피곤</span>
-                            <span>😐 보통</span>
-                            <span>😊 좋음</span>
-                            <span>😁 활기</span>
-                            <span>🔥 최고</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="text-lg font-bold text-purple-600" id="energyText">기분 좋음</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 운동 기록 -->
-                <div class="glass-card rounded-lg p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-purple-800 mb-4">🏃‍♀️ 운동 기록</h3>
-                    <textarea placeholder="오늘 한 운동을 기록해보세요" class="w-full p-2 border rounded-lg" rows="4" id="exercise"></textarea>
-                </div>
-            </div>
-
-            <!-- 오늘의 노트 -->
-            <div class="glass-card rounded-lg p-6 shadow-lg">
-                <h3 class="text-lg font-semibold text-purple-800 mb-4">📝 오늘의 노트</h3>
-                <textarea placeholder="오늘의 소감이나 다짐을 자유롭게 적어보세요" class="w-full p-3 border rounded-lg" rows="4" id="dailyNote"></textarea>
-            </div>
-        </div>
-
-        <!-- 주간 계획 화면 -->
-        <div id="weeklyView" class="hidden">
-            <div class="glass-card rounded-lg p-6 shadow-lg">
-                <h3 class="text-lg font-semibold text-purple-800 mb-4">📅 7일 식단 계획</h3>
-                
-                <!-- 주간 테이블 -->
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse">
-                        <thead>
-                            <tr class="bg-purple-100">
-                                <th class="border border-purple-200 p-3 text-purple-800">날짜</th>
-                                <th class="border border-purple-200 p-3 text-purple-800">🌅 아침</th>
-                                <th class="border border-purple-200 p-3 text-purple-800">☀️ 점심</th>
-                                <th class="border border-purple-200 p-3 text-purple-800">🍪 간식</th>
-                                <th class="border border-purple-200 p-3 text-purple-800">🌙 저녁</th>
-                            </tr>
-                        </thead>
-                        <tbody id="weeklyTable">
-                            <!-- 테이블 행들이 여기에 생성됩니다 -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- 주간 메모 -->
-                <div class="mt-6">
-                    <h4 class="text-md font-semibold text-purple-700 mb-2">📋 주간 메모</h4>
-                    <textarea placeholder="이번 주 식단 계획에 대한 메모를 작성해보세요" class="w-full p-3 border rounded-lg" rows="4" id="weeklyNote"></textarea>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 식사 시간 입력 모달 -->
-    <div id="mealModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="glass-card rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 class="text-lg font-semibold text-purple-800 mb-4" id="modalTitle">식사 기록</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">시간</label>
-                    <input type="time" class="w-full p-2 border rounded-lg" id="mealTime">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">음식</label>
-                    <input type="text" placeholder="먹은 음식을 입력해주세요" class="w-full p-2 border rounded-lg" id="mealFood">
-                </div>
-                <div class="flex gap-4">
-                    <button id="saveMeal" class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">저장</button>
-                    <button id="cancelMeal" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">취소</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <script src="https://unpkg.com/globe.gl"></script>
     <script>
-        // 전역 변수
-        let currentLanguage = 'ko';
-        let mealTimes = [];
-        
-        // 언어 데이터
-        const translations = {
-            ko: {
-                title: "💜 다이어트 다이어리",
-                dailyTab: "📆 오늘의 다짐",
-                weeklyTab: "📅 7일 식단 계획",
-                clockTitle: "🕐 식사 시간 기록",
-                waterTitle: "💧 물 섭취량",
-                mealTitle: "🍽️ 식사 기록",
-                breakfast: "🌅 아침",
-                lunch: "☀️ 점심",
-                snack: "🍪 간식",
-                dinner: "🌙 저녁",
-                weightSleep: "⚖️ 체중 & 수면",
-                energy: "⚡ 에너지 레벨",
-                exercise: "🏃‍♀️ 운동 기록",
-                dailyNote: "📝 오늘의 노트"
-            },
-            en: {
-                title: "💜 Diet Diary",
-                dailyTab: "📆 Today's Goal",
-                weeklyTab: "📅 7-Day Meal Plan",
-                clockTitle: "🕐 Meal Time Record",
-                waterTitle: "💧 Water Intake",
-                mealTitle: "🍽️ Meal Record",
-                breakfast: "🌅 Breakfast",
-                lunch: "☀️ Lunch",
-                snack: "🍪 Snack",
-                dinner: "🌙 Dinner",
-                weightSleep: "⚖️ Weight & Sleep",
-                energy: "⚡ Energy Level",
-                exercise: "🏃‍♀️ Exercise Record",
-                dailyNote: "📝 Daily Note"
+        class LandformGlobe {
+            constructor() {
+                this.globe = null;
+                this.landforms = [];
+                this.isRotating = true;
+                
+                this.init();
+                this.loadLandformData();
             }
-        };
 
-        // 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            initApp();
-        });
+            init() {
+                const container = document.getElementById('globeContainer');
+                
+                // Globe.gl 초기화
+                this.globe = Globe()
+                    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+                    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+                    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+                    .showAtmosphere(true)
+                    .atmosphereColor('#3a228a')
+                    .atmosphereAltitude(0.25)
+                    .enablePointerInteraction(true)
+                    .width(container.clientWidth)
+                    .height(container.clientHeight);
 
-        function initApp() {
-            setupClock();
-            setupWaterCups();
-            setupWeeklyTable();
-            setupEventListeners();
-            loadDarkMode();
-            loadData();
-            updateCurrentDate();
-        }
+                // 컨테이너에 추가
+                container.appendChild(this.globe(container));
 
-        function setupClock() {
-            const clockFace = document.getElementById('clockFace');
-            const radius = 85; // 시계 반지름
-            const centerX = 100;
-            const centerY = 100;
+                // 초기 카메라 설정
+                this.globe.pointOfView({ lat: 0, lng: 0, altitude: 2.5 });
 
-            for (let i = 1; i <= 24; i++) {
-                const angle = (i * 15 - 90) * (Math.PI / 180); // 12시부터 시작
-                const x = centerX + radius * Math.cos(angle) - 15;
-                const y = centerY + radius * Math.sin(angle) - 15;
+                // 자동 회전 설정
+                this.globe.controls().autoRotate = true;
+                this.globe.controls().autoRotateSpeed = 0.5;
 
-                const hourElement = document.createElement('div');
-                hourElement.className = 'clock-number';
-                hourElement.style.left = x + 'px';
-                hourElement.style.top = y + 'px';
-                hourElement.textContent = i;
-                hourElement.addEventListener('click', () => openMealModal(i));
+                // 이벤트 리스너 추가
+                this.addEventListeners();
 
-                clockFace.appendChild(hourElement);
+                // 로딩 완료
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 2000);
             }
-        }
 
-        function setupWaterCups() {
-            const waterCups = document.getElementById('waterCups');
-            for (let i = 0; i < 8; i++) {
-                const cup = document.createElement('div');
-                cup.className = 'water-cup';
-                cup.addEventListener('click', () => toggleWaterCup(i));
-                waterCups.appendChild(cup);
-            }
-        }
-
-        function setupWeeklyTable() {
-            const tbody = document.getElementById('weeklyTable');
-            const today = new Date();
-            
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(today);
-                date.setDate(today.getDate() + i);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="border border-purple-200 p-2 font-medium text-purple-700">
-                        ${date.getMonth() + 1}/${date.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})
-                    </td>
-                    <td class="border border-purple-200 p-2">
-                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="breakfast">
-                    </td>
-                    <td class="border border-purple-200 p-2">
-                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="lunch">
-                    </td>
-                    <td class="border border-purple-200 p-2">
-                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="snack">
-                    </td>
-                    <td class="border border-purple-200 p-2">
-                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="dinner">
-                    </td>
-                `;
-                tbody.appendChild(row);
-            }
-        }
-
-        function setupEventListeners() {
-            // 탭 전환
-            document.getElementById('dailyTab').addEventListener('click', () => switchTab('daily'));
-            document.getElementById('weeklyTab').addEventListener('click', () => switchTab('weekly'));
-            
-            // 백업/복원 버튼
-            document.getElementById('exportBtn').addEventListener('click', exportData);
-            document.getElementById('importFile').addEventListener('change', importData);
-            
-            // 언어 전환
-            document.getElementById('langBtn').addEventListener('click', toggleLanguage);
-            
-            // 초기화 버튼
-            document.getElementById('resetBtn').addEventListener('click', resetData);
-            
-            // 기분 아이콘 클릭
-            document.querySelectorAll('.mood-icon').forEach(icon => {
-                icon.addEventListener('click', function() {
-                    const parent = this.parentElement;
-                    parent.querySelectorAll('.mood-icon').forEach(i => i.classList.remove('selected'));
-                    this.classList.add('selected');
-                    saveData();
-                });
-            });
-            
-            // 에너지 슬라이더
-            document.getElementById('energyLevel').addEventListener('input', function() {
-                updateEnergyText(this.value);
-                saveData();
-            });
-            
-            // 모든 입력 필드에 자동 저장
-            document.querySelectorAll('input, textarea').forEach(element => {
-                element.addEventListener('input', saveData);
-            });
-            
-            // 모달 이벤트
-            document.getElementById('saveMeal').addEventListener('click', saveMealTime);
-            document.getElementById('cancelMeal').addEventListener('click', closeMealModal);
-        }
-
-        function switchTab(tab) {
-            const dailyView = document.getElementById('dailyView');
-            const weeklyView = document.getElementById('weeklyView');
-            const dailyTab = document.getElementById('dailyTab');
-            const weeklyTab = document.getElementById('weeklyTab');
-            
-            if (tab === 'daily') {
-                dailyView.classList.remove('hidden');
-                weeklyView.classList.add('hidden');
-                dailyTab.classList.add('active');
-                weeklyTab.classList.remove('active');
-                dailyTab.classList.remove('bg-gray-200', 'text-gray-700');
-                weeklyTab.classList.add('bg-gray-200', 'text-gray-700');
-            } else {
-                dailyView.classList.add('hidden');
-                weeklyView.classList.remove('hidden');
-                weeklyTab.classList.add('active');
-                dailyTab.classList.remove('active');
-                weeklyTab.classList.remove('bg-gray-200', 'text-gray-700');
-                dailyTab.classList.add('bg-gray-200', 'text-gray-700');
-            }
-        }
-
-        function toggleWaterCup(index) {
-            const cups = document.querySelectorAll('.water-cup');
-            const cup = cups[index];
-            
-            if (cup.classList.contains('filled')) {
-                // 선택된 컵부터 마지막까지 모두 비우기
-                for (let i = index; i < cups.length; i++) {
-                    cups[i].classList.remove('filled');
-                }
-            } else {
-                // 첫 번째부터 선택된 컵까지 모두 채우기
-                for (let i = 0; i <= index; i++) {
-                    cups[i].classList.add('filled');
-                }
-            }
-            
-            updateWaterCount();
-            saveData();
-        }
-
-        function updateWaterCount() {
-            const filledCups = document.querySelectorAll('.water-cup.filled').length;
-            document.getElementById('waterCount').textContent = filledCups;
-            document.getElementById('waterTotal').textContent = filledCups * 500;
-        }
-
-        function updateEnergyText(value) {
-            const texts = ['😴 피곤', '😐 보통', '😊 좋음', '😁 활기', '🔥 최고'];
-            document.getElementById('energyText').textContent = texts[value - 1];
-        }
-
-        function openMealModal(hour) {
-            document.getElementById('mealModal').classList.remove('hidden');
-            document.getElementById('mealModal').classList.add('flex');
-            document.getElementById('mealTime').value = `${hour.toString().padStart(2, '0')}:00`;
-        }
-
-        function closeMealModal() {
-            document.getElementById('mealModal').classList.add('hidden');
-            document.getElementById('mealModal').classList.remove('flex');
-        }
-
-        function saveMealTime() {
-            const time = document.getElementById('mealTime').value;
-            const food = document.getElementById('mealFood').value;
-            
-            if (time && food) {
-                // 시계에 마커 추가 로직 (선택사항)
-                console.log(`${time}에 ${food} 섭취 기록됨`);
-            }
-            
-            closeMealModal();
-            saveData();
-        }
-
-        function updateCurrentDate() {
-            const today = new Date();
-            const options = { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                weekday: 'long' 
-            };
-            document.getElementById('currentDate').textContent = today.toLocaleDateString('ko-KR', options);
-        }
-
-        function toggleLanguage() {
-            currentLanguage = currentLanguage === 'ko' ? 'en' : 'ko';
-            document.getElementById('langBtn').textContent = currentLanguage === 'ko' ? '🌐 EN' : '🌐 한국어';
-            // 여기에 실제 언어 변경 로직 추가 가능
-        }
-
-        function saveData() {
-            const data = {
-                date: new Date().toDateString(),
-                meals: {},
-                water: document.querySelectorAll('.water-cup.filled').length,
-                weight: document.getElementById('weight').value,
-                sleep: document.getElementById('sleep').value,
-                energy: document.getElementById('energyLevel').value,
-                exercise: document.getElementById('exercise').value,
-                dailyNote: document.getElementById('dailyNote').value,
-                weeklyNote: document.getElementById('weeklyNote').value,
-                weeklyPlan: {}
-            };
-
-            // 식사 데이터 저장
-            document.querySelectorAll('.meal-section').forEach(section => {
-                const meal = section.dataset.meal;
-                data.meals[meal] = {
-                    food: section.querySelector('[data-field="food"]').value,
-                    mood: section.querySelector('.mood-icon.selected')?.dataset.mood || null,
-                    memo: section.querySelector('[data-field="memo"]').value
-                };
-            });
-
-            // 주간 계획 데이터 저장
-            document.querySelectorAll('#weeklyTable input').forEach(input => {
-                const day = input.dataset.day;
-                const meal = input.dataset.meal;
-                if (!data.weeklyPlan[day]) data.weeklyPlan[day] = {};
-                data.weeklyPlan[day][meal] = input.value;
-            });
-
-            // 로컬 스토리지에 저장
-            try {
-                const dataStr = JSON.stringify(data);
-                localStorage.setItem('dietDiary', dataStr);
-                console.log('데이터가 성공적으로 저장되었습니다.');
-            } catch (error) {
-                console.log('데이터 저장 중 오류 발생:', error);
-                alert('저장 공간이 부족합니다. 일부 데이터를 삭제해주세요.');
-            }
-        }
-
-        function loadData() {
-            try {
-                const dataStr = localStorage.getItem('dietDiary');
-                if (!dataStr) return;
-                
-                const data = JSON.parse(dataStr);
-                
-                // 식사 데이터 로드
-                Object.keys(data.meals || {}).forEach(meal => {
-                    const section = document.querySelector(`[data-meal="${meal}"]`);
-                    if (section) {
-                        const mealData = data.meals[meal];
-                        section.querySelector('[data-field="food"]').value = mealData.food || '';
-                        section.querySelector('[data-field="memo"]').value = mealData.memo || '';
-                        
-                        if (mealData.mood) {
-                            section.querySelectorAll('.mood-icon').forEach(icon => {
-                                icon.classList.remove('selected');
-                            });
-                            section.querySelector(`[data-mood="${mealData.mood}"]`)?.classList.add('selected');
-                        }
-                    }
-                });
-
-                // 물 섭취량 로드
-                const waterCount = data.water || 0;
-                const cups = document.querySelectorAll('.water-cup');
-                cups.forEach((cup, index) => {
-                    if (index < waterCount) {
-                        cup.classList.add('filled');
-                    } else {
-                        cup.classList.remove('filled');
-                    }
-                });
-                updateWaterCount();
-
-                // 기타 데이터 로드
-                document.getElementById('weight').value = data.weight || '';
-                document.getElementById('sleep').value = data.sleep || '';
-                document.getElementById('energyLevel').value = data.energy || 3;
-                updateEnergyText(data.energy || 3);
-                document.getElementById('exercise').value = data.exercise || '';
-                document.getElementById('dailyNote').value = data.dailyNote || '';
-                document.getElementById('weeklyNote').value = data.weeklyNote || '';
-
-                // 주간 계획 데이터 로드
-                Object.keys(data.weeklyPlan || {}).forEach(day => {
-                    Object.keys(data.weeklyPlan[day] || {}).forEach(meal => {
-                        const input = document.querySelector(`[data-day="${day}"][data-meal="${meal}"]`);
-                        if (input) {
-                            input.value = data.weeklyPlan[day][meal] || '';
-                        }
-                    });
-                });
-
-            } catch (error) {
-                console.log('데이터 로드 중 오류 발생:', error);
-                alert('저장된 데이터를 불러오는 중 오류가 발생했습니다.');
-            }
-        }
-
-        function resetData() {
-            if (confirm('모든 데이터를 초기화하시겠습니까?')) {
-                localStorage.removeItem('dietDiary');
-                
-                // 폼 초기화
-                document.querySelectorAll('input, textarea').forEach(element => {
-                    element.value = '';
-                });
-                
-                // 기분 아이콘 초기화
-                document.querySelectorAll('.mood-icon').forEach(icon => {
-                    icon.classList.remove('selected');
-                });
-                
-                // 물컵 초기화
-                document.querySelectorAll('.water-cup').forEach(cup => {
-                    cup.classList.remove('filled');
-                });
-                updateWaterCount();
-                
-                // 에너지 레벨 초기화
-                document.getElementById('energyLevel').value = 3;
-                updateEnergyText(3);
-                
-                alert('데이터가 초기화되었습니다.');
-            }
-        }
-
-        // 데이터 내보내기 (백업)
-        function exportData() {
-            try {
-                const dataStr = localStorage.getItem('dietDiary');
-                if (!dataStr) {
-                    alert('저장된 데이터가 없습니다.');
-                    return;
-                }
-                
-                const data = JSON.parse(dataStr);
-                const exportData = {
-                    ...data,
-                    exportDate: new Date().toISOString(),
-                    version: '1.0'
-                };
-                
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
-                    type: 'application/json' 
-                });
-                const url = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `diet-diary-backup-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                alert('데이터가 다운로드 폴더에 백업되었습니다.');
-            } catch (error) {
-                alert('데이터 내보내기 중 오류가 발생했습니다.');
-            }
-        }
-
-        // 데이터 가져오기 (복원)
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
+            async loadLandformData() {
                 try {
-                    const importedData = JSON.parse(e.target.result);
-                    
-                    // 백업 파일 유효성 검사
-                    if (!importedData.meals && !importedData.weeklyPlan) {
-                        alert('올바르지 않은 백업 파일입니다.');
-                        return;
-                    }
-                    
-                    // 기존 데이터 덮어쓰기 확인
-                    if (localStorage.getItem('dietDiary')) {
-                        if (!confirm('기존 데이터를 덮어쓰시겠습니까?')) {
-                            return;
-                        }
-                    }
-                    
-                    localStorage.setItem('dietDiary', JSON.stringify(importedData));
-                    loadData();
-                    alert('데이터를 성공적으로 가져왔습니다.');
+                    const response = await fetch('data.json');
+                    this.landforms = await response.json();
+                    this.createLandformPoints();
                 } catch (error) {
-                    alert('파일 형식이 올바르지 않습니다.');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // 키보드 단축키 (선택사항)
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey || e.metaKey) {
-                switch (e.key) {
-                    case 's':
-                        e.preventDefault();
-                        saveData();
-                        break;
-                    case '1':
-                        e.preventDefault();
-                        switchTab('daily');
-                        break;
-                    case '2':
-                        e.preventDefault();
-                        switchTab('weekly');
-                        break;
+                    console.error('데이터를 불러올 수 없습니다:', error);
+                    // 에러 발생 시 샘플 데이터 사용
+                    this.loadSampleData();
                 }
             }
-        });
 
-        // PWA 지원을 위한 서비스 워커 등록 (선택사항)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                // 실제 환경에서는 서비스 워커 파일을 만들어 등록
-                console.log('PWA 기능을 추가하려면 서비스 워커를 구현하세요.');
-            });
-        }
-
-        // 터치 제스처 지원 (모바일)
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        document.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-
-        document.addEventListener('touchend', function(e) {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-
-        function handleSwipe() {
-            const swipeThreshold = 50;
-            const diff = touchStartX - touchEndX;
-            
-            if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) {
-                    // 왼쪽으로 스와이프 - 주간 계획으로
-                    switchTab('weekly');
-                } else {
-                    // 오른쪽으로 스와이프 - 데일리로
-                    switchTab('daily');
-                }
-            }
-        }
-
-        // 반응형 디자인을 위한 화면 크기 감지
-        function handleResize() {
-            const isMobile = window.innerWidth < 768;
-            
-            if (isMobile) {
-                // 모바일에서는 테이블을 카드 형태로 변경 (선택사항)
-                document.querySelectorAll('.glass-card').forEach(card => {
-                    card.style.margin = '0.5rem 0';
-                });
-            }
-        }
-
-        window.addEventListener('resize', handleResize);
-        handleResize(); // 초기 실행
-
-        // 다크 모드 토글 (선택사항)
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark');
-            const isDark = document.body.classList.contains('dark');
-            localStorage.setItem('darkMode', isDark);
-        }
-
-        // 다크 모드 설정 로드
-        function loadDarkMode() {
-            const isDark = localStorage.getItem('darkMode') === 'true';
-            if (isDark) {
-                document.body.classList.add('dark');
-            }
-        }
-
-        // 알림 및 리마인더 기능 (선택사항)
-        function setReminder() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(function(permission) {
-                    if (permission === 'granted') {
-                        // 식사 시간 알림 설정
-                        const now = new Date();
-                        const nextMealTime = new Date(now);
-                        nextMealTime.setHours(12, 0, 0, 0); // 점심 시간 예시
-                        
-                        if (nextMealTime > now) {
-                            const timeUntilMeal = nextMealTime.getTime() - now.getTime();
-                            setTimeout(function() {
-                                new Notification('🍽️ 식사 시간이에요!', {
-                                    body: '오늘의 식사를 기록해보세요.',
-                                    icon: '/icon-192x192.png' // 실제 아이콘 경로
-                                });
-                            }, timeUntilMeal);
-                        }
+            loadSampleData() {
+                this.landforms = [
+                    {
+                        "name": "그랜드캐니언 (미국)",
+                        "location": [36.1, -112.1],
+                        "formation": "오랜 시간 동안 콜로라도 강이 바위를 깎아내면서 만들어진 거대한 골짜기입니다. 마치 물이 돌을 깎는 것처럼, 수백만 년 동안 강물이 흐르면서 점점 더 깊은 계곡을 만들었어요.",
+                        "climate_impact": "깊은 계곡이어서 아래쪽과 위쪽의 온도가 많이 달라요. 계곡 밑바닥은 더 따뜻하고, 위쪽은 더 시원합니다. 또한 바람의 방향을 바꾸어 주변 지역의 날씨에 영향을 줍니다.",
+                        "image": "https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+                    },
+                    {
+                        "name": "에베레스트산 (네팔/티베트)",
+                        "location": [27.9881, 86.9250],
+                        "formation": "인도 대륙과 아시아 대륙이 서로 밀려오면서 땅이 위로 솟아올라 만들어진 세계에서 가장 높은 산입니다. 마치 두 장의 종이를 밀면 구겨지듯이, 두 대륙이 충돌하면서 높은 산맥이 만들어졌어요.",
+                        "climate_impact": "높은 산이어서 구름과 바람을 막아주는 역할을 합니다. 히말라야 산맥 때문에 인도 쪽은 비가 많이 오고, 북쪽 티베트는 건조해져요. 또한 높을수록 기온이 낮아져서 꼭대기는 항상 눈으로 덮여있습니다.",
+                        "image": "https://images.unsplash.com/photo-1605540436563-5bca919ae766?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80"
+                    },
+                    {
+                        "name": "사하라사막 (아프리카)",
+                        "location": [23.0, 5.0],
+                        "formation": "오랜 시간 동안 비가 적게 내리고 바람이 많이 불면서 모래가 쌓여 만들어진 세계에서 가장 큰 사막입니다. 바람이 모래를 날려와 쌓고, 또 다른 곳으로 옮기기를 반복하면서 거대한 모래언덕들이 생겼어요.",
+                        "climate_impact": "낮에는 매우 뜨겁고 밤에는 차가워져요. 모래는 열을 빨리 받고 빨리 식기 때문이에요. 또한 사막에서 나는 먼지가 바람을 타고 멀리까지 날아가서 다른 지역의 날씨에도 영향을 줍니다.",
+                        "image": "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80"
+                    },
+                    {
+                        "name": "마리아나 해구 (태평양)",
+                        "location": [11.4, 142.2],
+                        "formation": "바다 밑 두 개의 판이 만나면서 한 쪽이 다른 쪽 아래로 들어가면서 만들어진 바다에서 가장 깊은 곳입니다. 마치 땅이 아래로 꺼지면서 깊은 구덩이가 생긴 것과 같아요.",
+                        "climate_impact": "바다가 매우 깊어서 바닷물의 흐름에 영향을 줍니다. 깊은 바다의 차가운 물과 표면의 따뜻한 물이 섞이면서 주변 바다의 온도와 해류를 조절하는 역할을 해요.",
+                        "image": "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80"
+                    },
+                    {
+                        "name": "킬리만자로산 (탄자니아)",
+                        "location": [-3.0674, 37.3556],
+                        "formation": "땅 속에서 뜨거운 마그마가 올라와서 만들어진 화산입니다. 오랜 시간 동안 용암이 쌓이고 쌓여서 아프리카에서 가장 높은 산이 되었어요. 지금은 화산 활동이 멈춰있는 상태입니다.",
+                        "climate_impact": "적도 근처에 있지만 산이 너무 높아서 꼭대기에는 눈이 쌓여있어요. 높이에 따라 기온이 달라서 아래쪽은 더운 사바나, 중간은 숲, 위쪽은 추운 지역으로 나뉘어져 있습니다.",
+                        "image": "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2072&q=80"
                     }
+                ];
+                this.createLandformPoints();
+            }
+
+            createLandformPoints() {
+                // 포인트 데이터 준비
+                const pointsData = this.landforms.map((landform, index) => {
+                    const [lat, lng] = landform.location;
+                    return {
+                        lat: lat,
+                        lng: lng,
+                        size: 0.8,
+                        color: '#ff4757',
+                        landform: landform,
+                        label: landform.name
+                    };
                 });
+
+                // 포인트들을 지구본에 추가
+                this.globe
+                    .pointsData(pointsData)
+                    .pointColor('color')
+                    .pointAltitude(0.01)
+                    .pointRadius('size')
+                    .pointResolution(20)
+                    .pointLabel('label')
+                    .onPointClick((point) => {
+                        this.showLandformInfo(point.landform);
+                        // 클릭한 지점으로 카메라 이동
+                        this.globe.pointOfView({
+                            lat: point.lat,
+                            lng: point.lng,
+                            altitude: 1.5
+                        }, 1000);
+                    })
+                    .onPointHover((point) => {
+                        // 호버 시 커서 변경
+                        document.body.style.cursor = point ? 'pointer' : 'default';
+                    });
+            }
+
+            addEventListeners() {
+                // 컨트롤 버튼들
+                document.getElementById('rotateBtn').addEventListener('click', () => {
+                    this.toggleRotation();
+                });
+
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetView();
+                });
+
+                document.getElementById('closeBtn').addEventListener('click', () => {
+                    this.closeInfoPanel();
+                });
+
+                // 리사이즈 이벤트
+                window.addEventListener('resize', () => {
+                    this.onWindowResize();
+                });
+            }
+
+            showLandformInfo(landform) {
+                const panel = document.getElementById('infoPanel');
+                const welcomeMessage = document.getElementById('welcomeMessage');
+                const card = document.getElementById('landformCard');
+
+                // 환영 메시지 숨기고 카드 보이기
+                welcomeMessage.style.display = 'none';
+                card.style.display = 'block';
+
+                // 정보 채우기
+                document.getElementById('landformTitle').textContent = landform.name;
+                document.getElementById('landformFormation').textContent = landform.formation;
+                document.getElementById('landformClimate').textContent = landform.climate_impact;
+
+                // 이미지 설정
+                const imageElement = document.getElementById('landformImage');
+                if (landform.image && landform.image.trim() !== '') {
+                    imageElement.src = landform.image;
+                    imageElement.style.display = 'block';
+                    imageElement.onerror = () => {
+                        imageElement.style.display = 'none';
+                    };
+                } else {
+                    imageElement.style.display = 'none';
+                }
+
+                // 패널 보이기
+                panel.classList.remove('hidden');
+            }
+
+            closeInfoPanel() {
+                const panel = document.getElementById('infoPanel');
+                const welcomeMessage = document.getElementById('welcomeMessage');
+                const card = document.getElementById('landformCard');
+
+                panel.classList.add('hidden');
+                
+                // 잠시 후 환영 메시지로 되돌리기
+                setTimeout(() => {
+                    if (panel.classList.contains('hidden')) {
+                        welcomeMessage.style.display = 'block';
+                        card.style.display = 'none';
+                    }
+                }, 400);
+            }
+
+            toggleRotation() {
+                this.isRotating = !this.isRotating;
+                this.globe.controls().autoRotate = this.isRotating;
+                
+                const btn = document.getElementById('rotateBtn');
+                btn.textContent = this.isRotating ? '자동회전 정지' : '자동회전 시작';
+                btn.classList.toggle('active');
+            }
+
+            resetView() {
+                // 원래 위치로 카메라 이동
+                this.globe.pointOfView({ lat: 0, lng: 0, altitude: 2.5 }, 1000);
+                
+                // 자동 회전 재시작
+                this.isRotating = true;
+                this.globe.controls().autoRotate = true;
+                
+                const btn = document.getElementById('rotateBtn');
+                btn.textContent = '자동회전 정지';
+                btn.classList.remove('active');
+            }
+
+            onWindowResize() {
+                const container = document.getElementById('globeContainer');
+                this.globe
+                    .width(container.clientWidth)
+                    .height(container.clientHeight);
             }
         }
 
-        // 앱 초기화 시 알림 설정
-        // setReminder(); // 필요시 주석 해제
+        // 앱 시작
+        document.addEventListener('DOMContentLoaded', () => {
+            new LandformGlobe();
+        });
     </script>
 </body>
 </html>
