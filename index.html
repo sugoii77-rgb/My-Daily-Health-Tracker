@@ -142,6 +142,13 @@
             <div class="flex justify-between items-center">
                 <h1 class="text-3xl font-bold text-purple-800">💜 다이어트 다이어리</h1>
                 <div class="flex gap-4">
+                    <button id="exportBtn" class="px-4 py-2 bg-green-200 text-green-800 rounded-lg hover:bg-green-300 transition-all">
+                        💾 백업
+                    </button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <button onclick="document.getElementById('importFile').click()" class="px-4 py-2 bg-blue-200 text-blue-800 rounded-lg hover:bg-blue-300 transition-all">
+                        📁 복원
+                    </button>
                     <button id="langBtn" class="px-4 py-2 bg-purple-200 text-purple-800 rounded-lg hover:bg-purple-300 transition-all">
                         🌐 EN
                     </button>
@@ -405,6 +412,7 @@
             setupWaterCups();
             setupWeeklyTable();
             setupEventListeners();
+            loadDarkMode();
             loadData();
             updateCurrentDate();
         }
@@ -475,6 +483,10 @@
             // 탭 전환
             document.getElementById('dailyTab').addEventListener('click', () => switchTab('daily'));
             document.getElementById('weeklyTab').addEventListener('click', () => switchTab('weekly'));
+            
+            // 백업/복원 버튼
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            document.getElementById('importFile').addEventListener('change', importData);
             
             // 언어 전환
             document.getElementById('langBtn').addEventListener('click', toggleLanguage);
@@ -635,23 +647,24 @@
                 data.weeklyPlan[day][meal] = input.value;
             });
 
-            // 로컬 스토리지에 저장 (실제로는 메모리에 저장)
+            // 로컬 스토리지에 저장
             try {
                 const dataStr = JSON.stringify(data);
-                // localStorage.setItem('dietDiary', dataStr); // 실제 환경에서는 이 줄 사용
-                window.dietDiaryData = data; // 임시로 window 객체에 저장
+                localStorage.setItem('dietDiary', dataStr);
+                console.log('데이터가 성공적으로 저장되었습니다.');
             } catch (error) {
                 console.log('데이터 저장 중 오류 발생:', error);
+                alert('저장 공간이 부족합니다. 일부 데이터를 삭제해주세요.');
             }
         }
 
         function loadData() {
             try {
-                // const dataStr = localStorage.getItem('dietDiary'); // 실제 환경에서는 이 줄 사용
-                const data = window.dietDiaryData; // 임시로 window 객체에서 로드
+                const dataStr = localStorage.getItem('dietDiary');
+                if (!dataStr) return;
                 
-                if (!data) return;
-
+                const data = JSON.parse(dataStr);
+                
                 // 식사 데이터 로드
                 Object.keys(data.meals || {}).forEach(meal => {
                     const section = document.querySelector(`[data-meal="${meal}"]`);
@@ -702,13 +715,13 @@
 
             } catch (error) {
                 console.log('데이터 로드 중 오류 발생:', error);
+                alert('저장된 데이터를 불러오는 중 오류가 발생했습니다.');
             }
         }
 
         function resetData() {
             if (confirm('모든 데이터를 초기화하시겠습니까?')) {
-                // localStorage.removeItem('dietDiary'); // 실제 환경에서는 이 줄 사용
-                window.dietDiaryData = null; // 임시로 window 객체에서 삭제
+                localStorage.removeItem('dietDiary');
                 
                 // 폼 초기화
                 document.querySelectorAll('input, textarea').forEach(element => {
@@ -734,23 +747,42 @@
             }
         }
 
-        // 추가 기능: 데이터 내보내기 (선택사항)
+        // 데이터 내보내기 (백업)
         function exportData() {
-            const data = window.dietDiaryData || {};
-            const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `diet-diary-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            try {
+                const dataStr = localStorage.getItem('dietDiary');
+                if (!dataStr) {
+                    alert('저장된 데이터가 없습니다.');
+                    return;
+                }
+                
+                const data = JSON.parse(dataStr);
+                const exportData = {
+                    ...data,
+                    exportDate: new Date().toISOString(),
+                    version: '1.0'
+                };
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+                    type: 'application/json' 
+                });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `diet-diary-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('데이터가 다운로드 폴더에 백업되었습니다.');
+            } catch (error) {
+                alert('데이터 내보내기 중 오류가 발생했습니다.');
+            }
         }
 
-        // 추가 기능: 데이터 가져오기 (선택사항)
+        // 데이터 가져오기 (복원)
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -758,8 +790,22 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const data = JSON.parse(e.target.result);
-                    window.dietDiaryData = data;
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // 백업 파일 유효성 검사
+                    if (!importedData.meals && !importedData.weeklyPlan) {
+                        alert('올바르지 않은 백업 파일입니다.');
+                        return;
+                    }
+                    
+                    // 기존 데이터 덮어쓰기 확인
+                    if (localStorage.getItem('dietDiary')) {
+                        if (!confirm('기존 데이터를 덮어쓰시겠습니까?')) {
+                            return;
+                        }
+                    }
+                    
+                    localStorage.setItem('dietDiary', JSON.stringify(importedData));
                     loadData();
                     alert('데이터를 성공적으로 가져왔습니다.');
                 } catch (error) {
@@ -844,7 +890,15 @@
         function toggleDarkMode() {
             document.body.classList.toggle('dark');
             const isDark = document.body.classList.contains('dark');
-            // localStorage.setItem('darkMode', isDark); // 실제 환경에서는 이 줄 사용
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // 다크 모드 설정 로드
+        function loadDarkMode() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            if (isDark) {
+                document.body.classList.add('dark');
+            }
         }
 
         // 알림 및 리마인더 기능 (선택사항)
