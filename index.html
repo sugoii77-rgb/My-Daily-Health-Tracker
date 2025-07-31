@@ -1,10 +1,284 @@
-<!DOCTYPE html>
+// 데이터 내보내기 (백업)
+        function exportData() {
+            try {
+                const currentData = localStorage.getItem('dietDiary');
+                const historyData = localStorage.getItem('dietDiaryHistory');
+                
+                if (!currentData && !historyData) {
+                    alert('저장된 데이터가 없습니다.');
+                    return;
+                }
+                
+                const exportData = {
+                    currentData: currentData ? JSON.parse(currentData) : null,
+                    historyData: historyData ? JSON.parse(historyData) : [],
+                    exportDate: new Date().toISOString(),
+                    version: '2.0'
+                };
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+                    type: 'application/json' 
+                });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `diet-diary-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('데이터가 다운로드 폴더에 백업되었습니다.');
+            } catch (error) {
+                alert('데이터 내보내기 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 데이터 가져오기 (복원)
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // 백업 파일 유효성 검사
+                    if (!importedData.currentData && !importedData.historyData) {
+                        alert('올바르지 않은 백업 파일입니다.');
+                        return;
+                    }
+                    
+                    // 기존 데이터 덮어쓰기 확인
+                    if (localStorage.getItem('dietDiary') || localStorage.getItem('dietDiaryHistory')) {
+                        if (!confirm('기존 데이터를 덮어쓰시겠습니까?')) {
+                            return;
+                        }
+                    }
+                    
+                    // 데이터 복원
+                    if (importedData.currentData) {
+                        localStorage.setItem('dietDiary', JSON.stringify(importedData.currentData));
+                    }
+                    if (importedData.historyData) {
+                        localStorage.setItem('dietDiaryHistory', JSON.stringify(importedData.historyData));
+                    }
+                    
+                    loadData();
+                    alert('데이터를 성공적으로 가져왔습니다.');
+                } catch (error) {
+                    alert('파일 형식이 올바르지 않습니다.');
+                }
+            };
+            reader.readAsText(file);
+            
+            // 파일 입력 초기화
+            event.target.value = '';
+        }        function saveData() {
+            const today = new Date().toDateString();
+            let totalCalories = 0;
+            
+            const data = {
+                date: today,
+                timestamp: new Date().toISOString(),
+                meals: {},
+                water: document.querySelectorAll('.water-cup.filled').length,
+                weight: document.getElementById('weight').value,
+                sleep: document.getElementById('sleep').value,
+                energy: document.getElementById('energyLevel').value,
+                exercise: document.getElementById('exercise').value,
+                dailyNote: document.getElementById('dailyNote').value,
+                weeklyNote: document.getElementById('weeklyNote').value,
+                weeklyPlan: {}
+            };
+
+            // 식사 데이터 저장
+            document.querySelectorAll('.meal-section').forEach(section => {
+                const meal = section.dataset.meal;
+                const calories = parseInt(section.querySelector('[data-field="calories"]').value) || 0;
+                totalCalories += calories;
+                
+                data.meals[meal] = {
+                    food: section.querySelector('[data-field="food"]').value,
+                    calories: calories,
+                    mood: section.querySelector('.mood-icon.selected')?.dataset.mood || null,
+                    memo: section.querySelector('[data-field="memo"]').value
+                };
+            });
+            
+            data.totalCalories = totalCalories;
+
+            // 주간 계획 데이터 저장
+            document.querySelectorAll('#weeklyTable input').forEach(input => {
+                const day = input.dataset.day;
+                const meal = input.dataset.meal;
+                if (!data.weeklyPlan[day]) data.weeklyPlan[day] = {};
+                data.weeklyPlan[day][meal] = input.value;
+            });
+
+            // 히스토리 데이터 저장 (분석용)
+            let historyData = JSON.parse(localStorage.getItem('dietDiaryHistory') || '[]');
+            
+            // 오늘 데이터가 이미 있는지 확인
+            const existingIndex = historyData.findIndex(entry => entry.date === today);
+            
+            if (existingIndex >= 0) {
+                // 기존 데이터 업데이트
+                historyData[existingIndex] = data;
+            } else {
+                // 새 데이터 추가
+                historyData.push(data);
+            }
+            
+            // 30일 이상 된 데이터는 삭제 (성능 최적화)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            historyData = historyData.filter(entry => new Date(entry.date) >= thirtyDaysAgo);
+
+            // 로컬 스토리지에 저장
+            try {
+                localStorage.setItem('dietDiary', JSON.stringify(data));
+                localStorage.setItem('dietDiaryHistory', JSON.stringify(historyData));
+                console.log('데이터가 성공적으로 저장되었습니다.');
+            } catch (error) {
+                console.log('데이터 저장 중 오류 발생:', error);
+                alert('저장 공간이 부족합니다. 일부 데이터를 삭제해주세요.');
+            }
+        }        function updateTotalCalories() {
+            let totalCalories = 0;
+            
+            document.querySelectorAll('.meal-section').forEach(section => {
+                const caloriesInput = section.querySelector('[data-field="calories"]');
+                const calories = parseInt(caloriesInput.value) || 0;
+                totalCalories += calories;
+            });
+            
+            document.getElementById('totalCalories').textContent = totalCalories + ' kcal';
+        }        <!-- 데이터 분석 화면 -->
+        <div id="analyticsView" class="hidden space-y-6">
+            <!-- 분석 기간 선택 -->
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h3 class="text-lg font-semibold text-purple-800 mb-4">📊 데이터 분석</h3>
+                <div class="flex gap-4 mb-4">
+                    <button id="weeklyAnalysis" class="analysis-period-btn px-4 py-2 bg-purple-600 text-white rounded-lg active">
+                        📅 지난 7일 (일별)
+                    </button>
+                    <button id="monthlyAnalysis" class="analysis-period-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
+                        📈 지난 4주 (주별)
+                    </button>
+                </div>
+            </div>
+
+            <!-- 칼로리 섭취 분석 -->
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h4 class="text-md font-semibold text-purple-700 mb-4">🔥 칼로리 섭취 분석</h4>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <canvas id="caloriesChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <div class="text-sm text-purple-600">평균 일일 칼로리</div>
+                            <div class="text-2xl font-bold text-purple-800" id="avgCalories">0 kcal</div>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg">
+                            <div class="text-sm text-orange-600">최고 칼로리</div>
+                            <div class="text-xl font-bold text-orange-800" id="maxCalories">0 kcal</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <div class="text-sm text-green-600">최저 칼로리</div>
+                            <div class="text-xl font-bold text-green-800" id="minCalories">0 kcal</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 수분 섭취 분석 -->
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h4 class="text-md font-semibold text-purple-700 mb-4">💧 수분 섭취 분석</h4>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <canvas id="waterChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="text-sm text-blue-600">평균 일일 수분</div>
+                            <div class="text-2xl font-bold text-blue-800" id="avgWater">0 ml</div>
+                        </div>
+                        <div class="bg-cyan-50 p-4 rounded-lg">
+                            <div class="text-sm text-cyan-600">권장량 달성률</div>
+                            <div class="text-xl font-bold text-cyan-800" id="waterGoalRate">0%</div>
+                        </div>
+                        <div class="bg-teal-50 p-4 rounded-lg">
+                            <div class="text-sm text-teal-600">목표: 2000ml</div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                <div class="bg-teal-600 h-2 rounded-full" style="width: 0%" id="waterProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 체중 변화 분석 -->
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h4 class="text-md font-semibold text-purple-700 mb-4">⚖️ 체중 변화 분석</h4>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <canvas id="weightChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-indigo-50 p-4 rounded-lg">
+                            <div class="text-sm text-indigo-600">체중 변화</div>
+                            <div class="text-xl font-bold text-indigo-800" id="weightChange">0 kg</div>
+                        </div>
+                        <div class="bg-pink-50 p-4 rounded-lg">
+                            <div class="text-sm text-pink-600">목표까지</div>
+                            <div class="text-xl font-bold text-pink-800" id="weightToGoal">목표 설정 필요</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 종합 점수 -->
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h4 class="text-md font-semibold text-purple-700 mb-4">🏆 종합 건강 점수</h4>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg">
+                        <div class="text-3xl font-bold text-purple-800" id="overallScore">85</div>
+                        <div class="text-sm text-purple-600">종합 점수</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-800" id="hydrationScore">90</div>
+                        <div class="text-sm text-blue-600">수분 점수</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg">
+                        <div class="text-2xl font-bold text-green-800" id="consistencyScore">75</div>
+                        <div class="text-sm text-green-600">꾸준함 점수</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-lg">
+                        <div class="text-2xl font-bold text-orange-800" id="balanceScore">80</div>
+                        <div class="text-sm text-orange-600">균형 점수</div>
+                    </div>
+                </div>
+            </div>
+        </div><!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>다이어트 다이어리</title>
+    
+    <!-- PWA 설정 -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIu2WtOydtOyWtO2KuCDri6TsnbzslrTrpqwiLAogICJzaG9ydF9uYW1lIjogIu2WtOydtOyWtCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjNhV1IwYUQwaU1qWXdJaUJvWldsbmFIUTlJakkyTUNJZ2RtbGxkMEp2ZUQwaU1DQXdJREkyTUNBeU5qQWlJR1pwYkd3OUlpTnpaVE0yT1RSaUlpQjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaVBpQThZMmx5WTJ4bElHTjRQU0l4TXpBaUlHTjVQU0l4TXpBaUlISTlJak13SWlCbWFXeHNQU0lqWlRnM09XWTVJaTgrUEM5emRtYysiLAogICAgICAic2l6ZXMiOiAiMjU2eDI1NiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXSwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmNWYzZmYiLAogICJ0aGVtZV9jb2xvciI6ICIjZTg3OWY5Igp9">
+    <meta name="theme-color" content="#e879f9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="다이어트 다이어리">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #f5f3ff 0%, #fef7f0 100%);
@@ -161,12 +435,15 @@
 
         <!-- 탭 네비게이션 -->
         <div class="glass-card rounded-lg p-4 mb-6 shadow-lg">
-            <div class="flex gap-4">
-                <button id="dailyTab" class="tab-button px-6 py-3 rounded-lg font-semibold active">
+            <div class="flex gap-2 overflow-x-auto">
+                <button id="dailyTab" class="tab-button px-4 py-2 rounded-lg font-semibold active whitespace-nowrap">
                     📆 오늘의 다짐
                 </button>
-                <button id="weeklyTab" class="tab-button px-6 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700">
+                <button id="weeklyTab" class="tab-button px-4 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 whitespace-nowrap">
                     📅 7일 식단 계획
+                </button>
+                <button id="analyticsTab" class="tab-button px-4 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 whitespace-nowrap">
+                    📊 데이터 분석
                 </button>
             </div>
         </div>
@@ -205,13 +482,14 @@
                 </div>
             </div>
 
-            <!-- 식사별 기록 -->
+                <!-- 식사별 기록 -->
             <div class="glass-card rounded-lg p-6 shadow-lg">
                 <h3 class="text-lg font-semibold text-purple-800 mb-4">🍽️ 식사 기록</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="meal-section" data-meal="breakfast">
                         <h4 class="font-semibold text-purple-700 mb-3">🌅 아침</h4>
                         <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <input type="number" placeholder="칼로리 (kcal)" class="w-full p-2 border rounded-lg mb-2" data-field="calories">
                         <div class="flex gap-1 mb-2" data-field="mood">
                             <span class="mood-icon" data-mood="1">😣</span>
                             <span class="mood-icon" data-mood="2">😐</span>
@@ -224,6 +502,7 @@
                     <div class="meal-section" data-meal="lunch">
                         <h4 class="font-semibold text-purple-700 mb-3">☀️ 점심</h4>
                         <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <input type="number" placeholder="칼로리 (kcal)" class="w-full p-2 border rounded-lg mb-2" data-field="calories">
                         <div class="flex gap-1 mb-2" data-field="mood">
                             <span class="mood-icon" data-mood="1">😣</span>
                             <span class="mood-icon" data-mood="2">😐</span>
@@ -236,6 +515,7 @@
                     <div class="meal-section" data-meal="snack">
                         <h4 class="font-semibold text-purple-700 mb-3">🍪 간식</h4>
                         <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <input type="number" placeholder="칼로리 (kcal)" class="w-full p-2 border rounded-lg mb-2" data-field="calories">
                         <div class="flex gap-1 mb-2" data-field="mood">
                             <span class="mood-icon" data-mood="1">😣</span>
                             <span class="mood-icon" data-mood="2">😐</span>
@@ -248,6 +528,7 @@
                     <div class="meal-section" data-meal="dinner">
                         <h4 class="font-semibold text-purple-700 mb-3">🌙 저녁</h4>
                         <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <input type="number" placeholder="칼로리 (kcal)" class="w-full p-2 border rounded-lg mb-2" data-field="calories">
                         <div class="flex gap-1 mb-2" data-field="mood">
                             <span class="mood-icon" data-mood="1">😣</span>
                             <span class="mood-icon" data-mood="2">😐</span>
@@ -255,6 +536,14 @@
                             <span class="mood-icon" data-mood="4">😋</span>
                         </div>
                         <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
+                    </div>
+                </div>
+                
+                <!-- 일일 총 칼로리 표시 -->
+                <div class="mt-4 p-4 bg-purple-50 rounded-lg">
+                    <div class="text-center">
+                        <span class="text-sm text-purple-600">오늘 총 칼로리</span>
+                        <div class="text-2xl font-bold text-purple-800" id="totalCalories">0 kcal</div>
                     </div>
                 </div>
             </div>
@@ -365,6 +654,8 @@
         // 전역 변수
         let currentLanguage = 'ko';
         let mealTimes = [];
+        let caloriesChart, waterChart, weightChart;
+        let currentAnalysisPeriod = 'weekly';
         
         // 언어 데이터
         const translations = {
@@ -483,6 +774,11 @@
             // 탭 전환
             document.getElementById('dailyTab').addEventListener('click', () => switchTab('daily'));
             document.getElementById('weeklyTab').addEventListener('click', () => switchTab('weekly'));
+            document.getElementById('analyticsTab').addEventListener('click', () => switchTab('analytics'));
+            
+            // 분석 기간 전환
+            document.getElementById('weeklyAnalysis').addEventListener('click', () => switchAnalysisPeriod('weekly'));
+            document.getElementById('monthlyAnalysis').addEventListener('click', () => switchAnalysisPeriod('monthly'));
             
             // 백업/복원 버튼
             document.getElementById('exportBtn').addEventListener('click', exportData);
@@ -512,7 +808,10 @@
             
             // 모든 입력 필드에 자동 저장
             document.querySelectorAll('input, textarea').forEach(element => {
-                element.addEventListener('input', saveData);
+                element.addEventListener('input', function() {
+                    saveData();
+                    updateTotalCalories();
+                });
             });
             
             // 모달 이벤트
@@ -523,23 +822,34 @@
         function switchTab(tab) {
             const dailyView = document.getElementById('dailyView');
             const weeklyView = document.getElementById('weeklyView');
+            const analyticsView = document.getElementById('analyticsView');
             const dailyTab = document.getElementById('dailyTab');
             const weeklyTab = document.getElementById('weeklyTab');
+            const analyticsTab = document.getElementById('analyticsTab');
             
+            // 모든 뷰 숨기기
+            [dailyView, weeklyView, analyticsView].forEach(view => view.classList.add('hidden'));
+            
+            // 모든 탭 비활성화
+            [dailyTab, weeklyTab, analyticsTab].forEach(tabBtn => {
+                tabBtn.classList.remove('active');
+                tabBtn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            // 선택된 탭 활성화
             if (tab === 'daily') {
                 dailyView.classList.remove('hidden');
-                weeklyView.classList.add('hidden');
                 dailyTab.classList.add('active');
-                weeklyTab.classList.remove('active');
                 dailyTab.classList.remove('bg-gray-200', 'text-gray-700');
-                weeklyTab.classList.add('bg-gray-200', 'text-gray-700');
-            } else {
-                dailyView.classList.add('hidden');
+            } else if (tab === 'weekly') {
                 weeklyView.classList.remove('hidden');
                 weeklyTab.classList.add('active');
-                dailyTab.classList.remove('active');
                 weeklyTab.classList.remove('bg-gray-200', 'text-gray-700');
-                dailyTab.classList.add('bg-gray-200', 'text-gray-700');
+            } else if (tab === 'analytics') {
+                analyticsView.classList.remove('hidden');
+                analyticsTab.classList.add('active');
+                analyticsTab.classList.remove('bg-gray-200', 'text-gray-700');
+                updateAnalytics();
             }
         }
 
@@ -671,6 +981,7 @@
                     if (section) {
                         const mealData = data.meals[meal];
                         section.querySelector('[data-field="food"]').value = mealData.food || '';
+                        section.querySelector('[data-field="calories"]').value = mealData.calories || '';
                         section.querySelector('[data-field="memo"]').value = mealData.memo || '';
                         
                         if (mealData.mood) {
@@ -681,6 +992,8 @@
                         }
                     }
                 });
+
+                updateTotalCalories();
 
                 // 물 섭취량 로드
                 const waterCount = data.water || 0;
@@ -722,6 +1035,7 @@
         function resetData() {
             if (confirm('모든 데이터를 초기화하시겠습니까?')) {
                 localStorage.removeItem('dietDiary');
+                localStorage.removeItem('dietDiaryHistory');
                 
                 // 폼 초기화
                 document.querySelectorAll('input, textarea').forEach(element => {
@@ -743,11 +1057,347 @@
                 document.getElementById('energyLevel').value = 3;
                 updateEnergyText(3);
                 
-                alert('데이터가 초기화되었습니다.');
+                // 총 칼로리 초기화
+                updateTotalCalories();
+                
+                alert('모든 데이터가 초기화되었습니다.');
             }
         }
 
-        // 데이터 내보내기 (백업)
+        // 분석 기간 전환
+        function switchAnalysisPeriod(period) {
+            currentAnalysisPeriod = period;
+            
+            const weeklyBtn = document.getElementById('weeklyAnalysis');
+            const monthlyBtn = document.getElementById('monthlyAnalysis');
+            
+            if (period === 'weekly') {
+                weeklyBtn.classList.add('bg-purple-600', 'text-white', 'active');
+                weeklyBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                monthlyBtn.classList.add('bg-gray-200', 'text-gray-700');
+                monthlyBtn.classList.remove('bg-purple-600', 'text-white', 'active');
+            } else {
+                monthlyBtn.classList.add('bg-purple-600', 'text-white', 'active');
+                monthlyBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                weeklyBtn.classList.add('bg-gray-200', 'text-gray-700');
+                weeklyBtn.classList.remove('bg-purple-600', 'text-white', 'active');
+            }
+            
+            updateAnalytics();
+        }
+
+        // 분석 데이터 업데이트
+        function updateAnalytics() {
+            const historyData = JSON.parse(localStorage.getItem('dietDiaryHistory') || '[]');
+            
+            if (historyData.length === 0) {
+                showNoDataMessage();
+                return;
+            }
+            
+            if (currentAnalysisPeriod === 'weekly') {
+                updateWeeklyAnalytics(historyData);
+            } else {
+                updateMonthlyAnalytics(historyData);
+            }
+        }
+
+        // 지난 7일 분석 (일별)
+        function updateWeeklyAnalytics(historyData) {
+            const last7Days = getLast7DaysData(historyData);
+            
+            updateCaloriesChart(last7Days, 'daily');
+            updateWaterChart(last7Days, 'daily');
+            updateWeightChart(last7Days, 'daily');
+            updateStatistics(last7Days);
+        }
+
+        // 지난 4주 분석 (주별)
+        function updateMonthlyAnalytics(historyData) {
+            const last4Weeks = getLast4WeeksData(historyData);
+            
+            updateCaloriesChart(last4Weeks, 'weekly');
+            updateWaterChart(last4Weeks, 'weekly');
+            updateWeightChart(last4Weeks, 'weekly');
+            updateStatistics(last4Weeks);
+        }
+
+        // 지난 7일 데이터 가져오기
+        function getLast7DaysData(historyData) {
+            const result = [];
+            const today = new Date();
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dateStr = date.toDateString();
+                
+                const dayData = historyData.find(entry => entry.date === dateStr);
+                result.push({
+                    date: date,
+                    label: `${date.getMonth() + 1}/${date.getDate()}`,
+                    calories: dayData?.totalCalories || 0,
+                    water: dayData ? (dayData.water * 500) : 0,
+                    weight: dayData?.weight ? parseFloat(dayData.weight) : null
+                });
+            }
+            
+            return result;
+        }
+
+        // 지난 4주 데이터 가져오기 (주별 평균)
+        function getLast4WeeksData(historyData) {
+            const result = [];
+            const today = new Date();
+            
+            for (let week = 3; week >= 0; week--) {
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - (week * 7 + 6));
+                const weekEnd = new Date(today);
+                weekEnd.setDate(today.getDate() - (week * 7));
+                
+                const weekData = historyData.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    return entryDate >= weekStart && entryDate <= weekEnd;
+                });
+                
+                const avgCalories = weekData.length > 0 ? 
+                    Math.round(weekData.reduce((sum, day) => sum + (day.totalCalories || 0), 0) / weekData.length) : 0;
+                
+                const avgWater = weekData.length > 0 ? 
+                    Math.round(weekData.reduce((sum, day) => sum + ((day.water || 0) * 500), 0) / weekData.length) : 0;
+                
+                const weights = weekData.map(day => day.weight ? parseFloat(day.weight) : null).filter(w => w !== null);
+                const avgWeight = weights.length > 0 ? 
+                    Math.round((weights.reduce((sum, w) => sum + w, 0) / weights.length) * 10) / 10 : null;
+                
+                result.push({
+                    label: `${weekStart.getMonth() + 1}/${weekStart.getDate()} 주`,
+                    calories: avgCalories,
+                    water: avgWater,
+                    weight: avgWeight
+                });
+            }
+            
+            return result;
+        }
+
+        // 칼로리 차트 업데이트
+        function updateCaloriesChart(data, type) {
+            const ctx = document.getElementById('caloriesChart').getContext('2d');
+            
+            if (caloriesChart) {
+                caloriesChart.destroy();
+            }
+            
+            caloriesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.label),
+                    datasets: [{
+                        label: type === 'daily' ? '일일 칼로리' : '주간 평균 칼로리',
+                        data: data.map(d => d.calories),
+                        borderColor: '#e879f9',
+                        backgroundColor: 'rgba(232, 121, 249, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'kcal'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 수분 차트 업데이트
+        function updateWaterChart(data, type) {
+            const ctx = document.getElementById('waterChart').getContext('2d');
+            
+            if (waterChart) {
+                waterChart.destroy();
+            }
+            
+            waterChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.label),
+                    datasets: [{
+                        label: type === 'daily' ? '일일 수분 섭취' : '주간 평균 수분 섭취',
+                        data: data.map(d => d.water),
+                        backgroundColor: 'rgba(6, 182, 212, 0.8)',
+                        borderColor: '#06b6d4',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 2500,
+                            title: {
+                                display: true,
+                                text: 'ml'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 체중 차트 업데이트
+        function updateWeightChart(data, type) {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            
+            if (weightChart) {
+                weightChart.destroy();
+            }
+            
+            const weightData = data.filter(d => d.weight !== null);
+            
+            if (weightData.length === 0) {
+                ctx.fillText('체중 데이터가 없습니다', 50, 50);
+                return;
+            }
+            
+            weightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weightData.map(d => d.label),
+                    datasets: [{
+                        label: type === 'daily' ? '일일 체중' : '주간 평균 체중',
+                        data: weightData.map(d => d.weight),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'kg'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 통계 업데이트
+        function updateStatistics(data) {
+            const calories = data.map(d => d.calories).filter(c => c > 0);
+            const water = data.map(d => d.water).filter(w => w > 0);
+            
+            // 칼로리 통계
+            const avgCalories = calories.length > 0 ? Math.round(calories.reduce((a, b) => a + b, 0) / calories.length) : 0;
+            const maxCalories = calories.length > 0 ? Math.max(...calories) : 0;
+            const minCalories = calories.length > 0 ? Math.min(...calories) : 0;
+            
+            document.getElementById('avgCalories').textContent = avgCalories + ' kcal';
+            document.getElementById('maxCalories').textContent = maxCalories + ' kcal';
+            document.getElementById('minCalories').textContent = minCalories + ' kcal';
+            
+            // 수분 통계
+            const avgWater = water.length > 0 ? Math.round(water.reduce((a, b) => a + b, 0) / water.length) : 0;
+            const goalRate = Math.round((avgWater / 2000) * 100);
+            
+            document.getElementById('avgWater').textContent = avgWater + ' ml';
+            document.getElementById('waterGoalRate').textContent = Math.min(goalRate, 100) + '%';
+            document.getElementById('waterProgress').style.width = Math.min(goalRate, 100) + '%';
+            
+            // 체중 변화
+            const weights = data.map(d => d.weight).filter(w => w !== null);
+            if (weights.length >= 2) {
+                const weightChange = Math.round((weights[weights.length - 1] - weights[0]) * 10) / 10;
+                const changeText = weightChange > 0 ? `+${weightChange} kg` : `${weightChange} kg`;
+                document.getElementById('weightChange').textContent = changeText;
+            } else {
+                document.getElementById('weightChange').textContent = '데이터 부족';
+            }
+            
+            // 종합 점수 계산
+            updateHealthScores(data);
+        }
+
+        // 건강 점수 계산
+        function updateHealthScores(data) {
+            const validDays = data.filter(d => d.calories > 0 || d.water > 0);
+            
+            // 수분 점수 (목표 2000ml 기준)
+            const waterScores = data.map(d => Math.min((d.water / 2000) * 100, 100));
+            const hydrationScore = waterScores.length > 0 ? Math.round(waterScores.reduce((a, b) => a + b, 0) / waterScores.length) : 0;
+            
+            // 꾸준함 점수 (기록한 날 비율)
+            const consistencyScore = Math.round((validDays.length / data.length) * 100);
+            
+            // 균형 점수 (칼로리 표준편차 기반)
+            const calories = data.map(d => d.calories).filter(c => c > 0);
+            let balanceScore = 80; // 기본값
+            if (calories.length > 2) {
+                const avg = calories.reduce((a, b) => a + b, 0) / calories.length;
+                const variance = calories.reduce((sum, cal) => sum + Math.pow(cal - avg, 2), 0) / calories.length;
+                const stdDev = Math.sqrt(variance);
+                balanceScore = Math.max(0, Math.min(100, 100 - (stdDev / avg) * 100));
+            }
+            
+            // 종합 점수
+            const overallScore = Math.round((hydrationScore + consistencyScore + balanceScore) / 3);
+            
+            document.getElementById('overallScore').textContent = overallScore;
+            document.getElementById('hydrationScore').textContent = hydrationScore;
+            document.getElementById('consistencyScore').textContent = consistencyScore;
+            document.getElementById('balanceScore').textContent = Math.round(balanceScore);
+        }
+
+        // 데이터 없음 메시지
+        function showNoDataMessage() {
+            ['caloriesChart', 'waterChart', 'weightChart'].forEach(chartId => {
+                const canvas = document.getElementById(chartId);
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('분석할 데이터가 없습니다', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('며칠 더 기록해보세요! 💪', canvas.width / 2, canvas.height / 2 + 25);
+            });
+            
+            // 통계 초기화
+            document.getElementById('avgCalories').textContent = '0 kcal';
+            document.getElementById('maxCalories').textContent = '0 kcal';
+            document.getElementById('minCalories').textContent = '0 kcal';
+            document.getElementById('avgWater').textContent = '0 ml';
+            document.getElementById('waterGoalRate').textContent = '0%';
+            document.getElementById('weightChange').textContent = '데이터 없음';
+        }
         function exportData() {
             try {
                 const dataStr = localStorage.getItem('dietDiary');
