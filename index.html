@@ -706,6 +706,7 @@
             loadDarkMode();
             loadData();
             updateCurrentDate();
+            updateTotalCalories(); // 초기 총 칼로리 계산
         }
 
         function setupClock() {
@@ -1321,26 +1322,39 @@
             const maxCalories = calories.length > 0 ? Math.max(...calories) : 0;
             const minCalories = calories.length > 0 ? Math.min(...calories) : 0;
             
-            document.getElementById('avgCalories').textContent = avgCalories + ' kcal';
-            document.getElementById('maxCalories').textContent = maxCalories + ' kcal';
-            document.getElementById('minCalories').textContent = minCalories + ' kcal';
+            // 안전한 요소 업데이트
+            const avgCaloriesEl = document.getElementById('avgCalories');
+            const maxCaloriesEl = document.getElementById('maxCalories');
+            const minCaloriesEl = document.getElementById('minCalories');
+            
+            if (avgCaloriesEl) avgCaloriesEl.textContent = avgCalories + ' kcal';
+            if (maxCaloriesEl) maxCaloriesEl.textContent = maxCalories + ' kcal';
+            if (minCaloriesEl) minCaloriesEl.textContent = minCalories + ' kcal';
             
             // 수분 통계
             const avgWater = water.length > 0 ? Math.round(water.reduce((a, b) => a + b, 0) / water.length) : 0;
             const goalRate = Math.round((avgWater / 2000) * 100);
             
-            document.getElementById('avgWater').textContent = avgWater + ' ml';
-            document.getElementById('waterGoalRate').textContent = Math.min(goalRate, 100) + '%';
-            document.getElementById('waterProgress').style.width = Math.min(goalRate, 100) + '%';
+            const avgWaterEl = document.getElementById('avgWater');
+            const waterGoalRateEl = document.getElementById('waterGoalRate');
+            const waterProgressEl = document.getElementById('waterProgress');
+            
+            if (avgWaterEl) avgWaterEl.textContent = avgWater + ' ml';
+            if (waterGoalRateEl) waterGoalRateEl.textContent = Math.min(goalRate, 100) + '%';
+            if (waterProgressEl) waterProgressEl.style.width = Math.min(goalRate, 100) + '%';
             
             // 체중 변화
             const weights = data.map(d => d.weight).filter(w => w !== null);
-            if (weights.length >= 2) {
-                const weightChange = Math.round((weights[weights.length - 1] - weights[0]) * 10) / 10;
-                const changeText = weightChange > 0 ? `+${weightChange} kg` : `${weightChange} kg`;
-                document.getElementById('weightChange').textContent = changeText;
-            } else {
-                document.getElementById('weightChange').textContent = '데이터 부족';
+            const weightChangeEl = document.getElementById('weightChange');
+            
+            if (weightChangeEl) {
+                if (weights.length >= 2) {
+                    const weightChange = Math.round((weights[weights.length - 1] - weights[0]) * 10) / 10;
+                    const changeText = weightChange > 0 ? `+${weightChange} kg` : `${weightChange} kg`;
+                    weightChangeEl.textContent = changeText;
+                } else {
+                    weightChangeEl.textContent = '데이터 부족';
+                }
             }
             
             // 종합 점수 계산
@@ -1371,16 +1385,27 @@
             // 종합 점수
             const overallScore = Math.round((hydrationScore + consistencyScore + balanceScore) / 3);
             
-            document.getElementById('overallScore').textContent = overallScore;
-            document.getElementById('hydrationScore').textContent = hydrationScore;
-            document.getElementById('consistencyScore').textContent = consistencyScore;
-            document.getElementById('balanceScore').textContent = Math.round(balanceScore);
+            // 안전한 요소 업데이트
+            const elements = [
+                { id: 'overallScore', value: overallScore },
+                { id: 'hydrationScore', value: hydrationScore },
+                { id: 'consistencyScore', value: consistencyScore },
+                { id: 'balanceScore', value: Math.round(balanceScore) }
+            ];
+            
+            elements.forEach(({ id, value }) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
         }
 
         // 데이터 없음 메시지
         function showNoDataMessage() {
+            // 차트들을 안전하게 처리
             ['caloriesChart', 'waterChart', 'weightChart'].forEach(chartId => {
                 const canvas = document.getElementById(chartId);
+                if (!canvas) return; // 요소가 없으면 건너뛰기
+                
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = '#6b7280';
@@ -1390,13 +1415,22 @@
                 ctx.fillText('며칠 더 기록해보세요! 💪', canvas.width / 2, canvas.height / 2 + 25);
             });
             
-            // 통계 초기화
-            document.getElementById('avgCalories').textContent = '0 kcal';
-            document.getElementById('maxCalories').textContent = '0 kcal';
-            document.getElementById('minCalories').textContent = '0 kcal';
-            document.getElementById('avgWater').textContent = '0 ml';
-            document.getElementById('waterGoalRate').textContent = '0%';
-            document.getElementById('weightChange').textContent = '데이터 없음';
+            // 통계 초기화 - 요소 존재 확인
+            const elements = [
+                'avgCalories', 'maxCalories', 'minCalories', 'avgWater', 
+                'waterGoalRate', 'weightChange'
+            ];
+            
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (id.includes('Calories')) element.textContent = '0 kcal';
+                    else if (id.includes('Water') || id.includes('water')) {
+                        element.textContent = id === 'waterGoalRate' ? '0%' : '0 ml';
+                    }
+                    else element.textContent = '데이터 없음';
+                }
+            });
         }
         function exportData() {
             try {
