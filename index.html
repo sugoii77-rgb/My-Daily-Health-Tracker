@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다이어트 다이어리</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f3ff 0%, #fef7f0 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .clock-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+        
+        .clock-face {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #e879f9;
+            border-radius: 50%;
+            position: relative;
+            background: white;
+        }
+        
+        .clock-number {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #6b21a8;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .clock-number:hover {
+            background: #f3e8ff;
+            transform: scale(1.1);
+        }
+        
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: #e879f9;
+            border-radius: 50%;
+        }
+        
+        .water-cup {
+            width: 40px;
+            height: 50px;
+            border: 2px solid #06b6d4;
+            border-radius: 0 0 8px 8px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .water-cup.filled {
+            background: linear-gradient(to top, #06b6d4 0%, #67e8f9 100%);
+        }
+        
+        .mood-icon {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .mood-icon:hover {
+            background: #f3e8ff;
+            transform: scale(1.1);
+        }
+        
+        .mood-icon.selected {
+            background: #e879f9;
+            color: white;
+        }
+        
+        .energy-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        
+        .energy-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e879f9;
+            cursor: pointer;
+        }
+        
+        .tab-button {
+            transition: all 0.3s;
+        }
+        
+        .tab-button.active {
+            background: #e879f9;
+            color: white;
+        }
+        
+        .meal-time-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- 헤더 -->
+        <div class="glass-card rounded-lg p-6 mb-6 shadow-lg">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold text-purple-800">💜 다이어트 다이어리</h1>
+                <div class="flex gap-4">
+                    <button id="langBtn" class="px-4 py-2 bg-purple-200 text-purple-800 rounded-lg hover:bg-purple-300 transition-all">
+                        🌐 EN
+                    </button>
+                    <button id="resetBtn" class="px-4 py-2 bg-red-200 text-red-800 rounded-lg hover:bg-red-300 transition-all">
+                        🔄 초기화
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="glass-card rounded-lg p-4 mb-6 shadow-lg">
+            <div class="flex gap-4">
+                <button id="dailyTab" class="tab-button px-6 py-3 rounded-lg font-semibold active">
+                    📆 오늘의 다짐
+                </button>
+                <button id="weeklyTab" class="tab-button px-6 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700">
+                    📅 7일 식단 계획
+                </button>
+            </div>
+        </div>
+
+        <!-- 데일리 화면 -->
+        <div id="dailyView" class="space-y-6">
+            <!-- 날짜 표시 -->
+            <div class="glass-card rounded-lg p-4 shadow-lg">
+                <h2 class="text-xl font-bold text-purple-800 mb-2" id="currentDate"></h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 24시간 원형 시계 -->
+                <div class="glass-card rounded-lg p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-purple-800 mb-4">🕐 식사 시간 기록</h3>
+                    <div class="clock-container">
+                        <div class="clock-face" id="clockFace">
+                            <div class="clock-center"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <p class="text-sm text-gray-600">시간을 클릭하여 식사 기록</p>
+                    </div>
+                </div>
+
+                <!-- 물 섭취량 -->
+                <div class="glass-card rounded-lg p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-purple-800 mb-4">💧 물 섭취량</h3>
+                    <div class="grid grid-cols-4 gap-4 mb-4" id="waterCups">
+                        <!-- 물컵들이 여기에 생성됩니다 -->
+                    </div>
+                    <div class="text-center">
+                        <span class="text-lg font-bold text-blue-600" id="waterCount">0</span> / 8 컵
+                        <p class="text-sm text-gray-600">(총 <span id="waterTotal">0</span>ml)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 식사별 기록 -->
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h3 class="text-lg font-semibold text-purple-800 mb-4">🍽️ 식사 기록</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="meal-section" data-meal="breakfast">
+                        <h4 class="font-semibold text-purple-700 mb-3">🌅 아침</h4>
+                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <div class="flex gap-1 mb-2" data-field="mood">
+                            <span class="mood-icon" data-mood="1">😣</span>
+                            <span class="mood-icon" data-mood="2">😐</span>
+                            <span class="mood-icon" data-mood="3">🙂</span>
+                            <span class="mood-icon" data-mood="4">😋</span>
+                        </div>
+                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
+                    </div>
+                    
+                    <div class="meal-section" data-meal="lunch">
+                        <h4 class="font-semibold text-purple-700 mb-3">☀️ 점심</h4>
+                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <div class="flex gap-1 mb-2" data-field="mood">
+                            <span class="mood-icon" data-mood="1">😣</span>
+                            <span class="mood-icon" data-mood="2">😐</span>
+                            <span class="mood-icon" data-mood="3">🙂</span>
+                            <span class="mood-icon" data-mood="4">😋</span>
+                        </div>
+                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
+                    </div>
+                    
+                    <div class="meal-section" data-meal="snack">
+                        <h4 class="font-semibold text-purple-700 mb-3">🍪 간식</h4>
+                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <div class="flex gap-1 mb-2" data-field="mood">
+                            <span class="mood-icon" data-mood="1">😣</span>
+                            <span class="mood-icon" data-mood="2">😐</span>
+                            <span class="mood-icon" data-mood="3">🙂</span>
+                            <span class="mood-icon" data-mood="4">😋</span>
+                        </div>
+                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
+                    </div>
+                    
+                    <div class="meal-section" data-meal="dinner">
+                        <h4 class="font-semibold text-purple-700 mb-3">🌙 저녁</h4>
+                        <input type="text" placeholder="음식 입력" class="w-full p-2 border rounded-lg mb-2" data-field="food">
+                        <div class="flex gap-1 mb-2" data-field="mood">
+                            <span class="mood-icon" data-mood="1">😣</span>
+                            <span class="mood-icon" data-mood="2">😐</span>
+                            <span class="mood-icon" data-mood="3">🙂</span>
+                            <span class="mood-icon" data-mood="4">😋</span>
+                        </div>
+                        <textarea placeholder="메모" class="w-full p-2 border rounded-lg text-sm" rows="2" data-field="memo"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 기타 기록 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 체중 & 수면 -->
+                <div class="glass-card rounded-lg p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-purple-800 mb-4">⚖️ 체중 & 수면</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">체중 (kg)</label>
+                            <input type="number" step="0.1" placeholder="60.0" class="w-full p-2 border rounded-lg" id="weight">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">수면 시간</label>
+                            <input type="number" step="0.5" placeholder="8.0" class="w-full p-2 border rounded-lg" id="sleep">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 에너지 레벨 -->
+                <div class="glass-card rounded-lg p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-purple-800 mb-4">⚡ 에너지 레벨</h3>
+                    <div class="space-y-4">
+                        <input type="range" min="1" max="5" value="3" class="energy-slider" id="energyLevel">
+                        <div class="flex justify-between text-xs text-gray-600">
+                            <span>😴 피곤</span>
+                            <span>😐 보통</span>
+                            <span>😊 좋음</span>
+                            <span>😁 활기</span>
+                            <span>🔥 최고</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-lg font-bold text-purple-600" id="energyText">기분 좋음</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 운동 기록 -->
+                <div class="glass-card rounded-lg p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-purple-800 mb-4">🏃‍♀️ 운동 기록</h3>
+                    <textarea placeholder="오늘 한 운동을 기록해보세요" class="w-full p-2 border rounded-lg" rows="4" id="exercise"></textarea>
+                </div>
+            </div>
+
+            <!-- 오늘의 노트 -->
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h3 class="text-lg font-semibold text-purple-800 mb-4">📝 오늘의 노트</h3>
+                <textarea placeholder="오늘의 소감이나 다짐을 자유롭게 적어보세요" class="w-full p-3 border rounded-lg" rows="4" id="dailyNote"></textarea>
+            </div>
+        </div>
+
+        <!-- 주간 계획 화면 -->
+        <div id="weeklyView" class="hidden">
+            <div class="glass-card rounded-lg p-6 shadow-lg">
+                <h3 class="text-lg font-semibold text-purple-800 mb-4">📅 7일 식단 계획</h3>
+                
+                <!-- 주간 테이블 -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-purple-100">
+                                <th class="border border-purple-200 p-3 text-purple-800">날짜</th>
+                                <th class="border border-purple-200 p-3 text-purple-800">🌅 아침</th>
+                                <th class="border border-purple-200 p-3 text-purple-800">☀️ 점심</th>
+                                <th class="border border-purple-200 p-3 text-purple-800">🍪 간식</th>
+                                <th class="border border-purple-200 p-3 text-purple-800">🌙 저녁</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weeklyTable">
+                            <!-- 테이블 행들이 여기에 생성됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 주간 메모 -->
+                <div class="mt-6">
+                    <h4 class="text-md font-semibold text-purple-700 mb-2">📋 주간 메모</h4>
+                    <textarea placeholder="이번 주 식단 계획에 대한 메모를 작성해보세요" class="w-full p-3 border rounded-lg" rows="4" id="weeklyNote"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 식사 시간 입력 모달 -->
+    <div id="mealModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="glass-card rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-semibold text-purple-800 mb-4" id="modalTitle">식사 기록</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">시간</label>
+                    <input type="time" class="w-full p-2 border rounded-lg" id="mealTime">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">음식</label>
+                    <input type="text" placeholder="먹은 음식을 입력해주세요" class="w-full p-2 border rounded-lg" id="mealFood">
+                </div>
+                <div class="flex gap-4">
+                    <button id="saveMeal" class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">저장</button>
+                    <button id="cancelMeal" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentLanguage = 'ko';
+        let mealTimes = [];
+        
+        // 언어 데이터
+        const translations = {
+            ko: {
+                title: "💜 다이어트 다이어리",
+                dailyTab: "📆 오늘의 다짐",
+                weeklyTab: "📅 7일 식단 계획",
+                clockTitle: "🕐 식사 시간 기록",
+                waterTitle: "💧 물 섭취량",
+                mealTitle: "🍽️ 식사 기록",
+                breakfast: "🌅 아침",
+                lunch: "☀️ 점심",
+                snack: "🍪 간식",
+                dinner: "🌙 저녁",
+                weightSleep: "⚖️ 체중 & 수면",
+                energy: "⚡ 에너지 레벨",
+                exercise: "🏃‍♀️ 운동 기록",
+                dailyNote: "📝 오늘의 노트"
+            },
+            en: {
+                title: "💜 Diet Diary",
+                dailyTab: "📆 Today's Goal",
+                weeklyTab: "📅 7-Day Meal Plan",
+                clockTitle: "🕐 Meal Time Record",
+                waterTitle: "💧 Water Intake",
+                mealTitle: "🍽️ Meal Record",
+                breakfast: "🌅 Breakfast",
+                lunch: "☀️ Lunch",
+                snack: "🍪 Snack",
+                dinner: "🌙 Dinner",
+                weightSleep: "⚖️ Weight & Sleep",
+                energy: "⚡ Energy Level",
+                exercise: "🏃‍♀️ Exercise Record",
+                dailyNote: "📝 Daily Note"
+            }
+        };
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+        });
+
+        function initApp() {
+            setupClock();
+            setupWaterCups();
+            setupWeeklyTable();
+            setupEventListeners();
+            loadData();
+            updateCurrentDate();
+        }
+
+        function setupClock() {
+            const clockFace = document.getElementById('clockFace');
+            const radius = 85; // 시계 반지름
+            const centerX = 100;
+            const centerY = 100;
+
+            for (let i = 1; i <= 24; i++) {
+                const angle = (i * 15 - 90) * (Math.PI / 180); // 12시부터 시작
+                const x = centerX + radius * Math.cos(angle) - 15;
+                const y = centerY + radius * Math.sin(angle) - 15;
+
+                const hourElement = document.createElement('div');
+                hourElement.className = 'clock-number';
+                hourElement.style.left = x + 'px';
+                hourElement.style.top = y + 'px';
+                hourElement.textContent = i;
+                hourElement.addEventListener('click', () => openMealModal(i));
+
+                clockFace.appendChild(hourElement);
+            }
+        }
+
+        function setupWaterCups() {
+            const waterCups = document.getElementById('waterCups');
+            for (let i = 0; i < 8; i++) {
+                const cup = document.createElement('div');
+                cup.className = 'water-cup';
+                cup.addEventListener('click', () => toggleWaterCup(i));
+                waterCups.appendChild(cup);
+            }
+        }
+
+        function setupWeeklyTable() {
+            const tbody = document.getElementById('weeklyTable');
+            const today = new Date();
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-purple-200 p-2 font-medium text-purple-700">
+                        ${date.getMonth() + 1}/${date.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})
+                    </td>
+                    <td class="border border-purple-200 p-2">
+                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="breakfast">
+                    </td>
+                    <td class="border border-purple-200 p-2">
+                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="lunch">
+                    </td>
+                    <td class="border border-purple-200 p-2">
+                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="snack">
+                    </td>
+                    <td class="border border-purple-200 p-2">
+                        <input type="text" class="w-full p-1 border-0 bg-transparent" data-day="${i}" data-meal="dinner">
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        function setupEventListeners() {
+            // 탭 전환
+            document.getElementById('dailyTab').addEventListener('click', () => switchTab('daily'));
+            document.getElementById('weeklyTab').addEventListener('click', () => switchTab('weekly'));
+            
+            // 언어 전환
+            document.getElementById('langBtn').addEventListener('click', toggleLanguage);
+            
+            // 초기화 버튼
+            document.getElementById('resetBtn').addEventListener('click', resetData);
+            
+            // 기분 아이콘 클릭
+            document.querySelectorAll('.mood-icon').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const parent = this.parentElement;
+                    parent.querySelectorAll('.mood-icon').forEach(i => i.classList.remove('selected'));
+                    this.classList.add('selected');
+                    saveData();
+                });
+            });
+            
+            // 에너지 슬라이더
+            document.getElementById('energyLevel').addEventListener('input', function() {
+                updateEnergyText(this.value);
+                saveData();
+            });
+            
+            // 모든 입력 필드에 자동 저장
+            document.querySelectorAll('input, textarea').forEach(element => {
+                element.addEventListener('input', saveData);
+            });
+            
+            // 모달 이벤트
+            document.getElementById('saveMeal').addEventListener('click', saveMealTime);
+            document.getElementById('cancelMeal').addEventListener('click', closeMealModal);
+        }
+
+        function switchTab(tab) {
+            const dailyView = document.getElementById('dailyView');
+            const weeklyView = document.getElementById('weeklyView');
+            const dailyTab = document.getElementById('dailyTab');
+            const weeklyTab = document.getElementById('weeklyTab');
+            
+            if (tab === 'daily') {
+                dailyView.classList.remove('hidden');
+                weeklyView.classList.add('hidden');
+                dailyTab.classList.add('active');
+                weeklyTab.classList.remove('active');
+                dailyTab.classList.remove('bg-gray-200', 'text-gray-700');
+                weeklyTab.classList.add('bg-gray-200', 'text-gray-700');
+            } else {
+                dailyView.classList.add('hidden');
+                weeklyView.classList.remove('hidden');
+                weeklyTab.classList.add('active');
+                dailyTab.classList.remove('active');
+                weeklyTab.classList.remove('bg-gray-200', 'text-gray-700');
+                dailyTab.classList.add('bg-gray-200', 'text-gray-700');
+            }
+        }
+
+        function toggleWaterCup(index) {
+            const cups = document.querySelectorAll('.water-cup');
+            const cup = cups[index];
+            
+            if (cup.classList.contains('filled')) {
+                // 선택된 컵부터 마지막까지 모두 비우기
+                for (let i = index; i < cups.length; i++) {
+                    cups[i].classList.remove('filled');
+                }
+            } else {
+                // 첫 번째부터 선택된 컵까지 모두 채우기
+                for (let i = 0; i <= index; i++) {
+                    cups[i].classList.add('filled');
+                }
+            }
+            
+            updateWaterCount();
+            saveData();
+        }
+
+        function updateWaterCount() {
+            const filledCups = document.querySelectorAll('.water-cup.filled').length;
+            document.getElementById('waterCount').textContent = filledCups;
+            document.getElementById('waterTotal').textContent = filledCups * 500;
+        }
+
+        function updateEnergyText(value) {
+            const texts = ['😴 피곤', '😐 보통', '😊 좋음', '😁 활기', '🔥 최고'];
+            document.getElementById('energyText').textContent = texts[value - 1];
+        }
+
+        function openMealModal(hour) {
+            document.getElementById('mealModal').classList.remove('hidden');
+            document.getElementById('mealModal').classList.add('flex');
+            document.getElementById('mealTime').value = `${hour.toString().padStart(2, '0')}:00`;
+        }
+
+        function closeMealModal() {
+            document.getElementById('mealModal').classList.add('hidden');
+            document.getElementById('mealModal').classList.remove('flex');
+        }
+
+        function saveMealTime() {
+            const time = document.getElementById('mealTime').value;
+            const food = document.getElementById('mealFood').value;
+            
+            if (time && food) {
+                // 시계에 마커 추가 로직 (선택사항)
+                console.log(`${time}에 ${food} 섭취 기록됨`);
+            }
+            
+            closeMealModal();
+            saveData();
+        }
+
+        function updateCurrentDate() {
+            const today = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                weekday: 'long' 
+            };
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('ko-KR', options);
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ko' ? 'en' : 'ko';
+            document.getElementById('langBtn').textContent = currentLanguage === 'ko' ? '🌐 EN' : '🌐 한국어';
+            // 여기에 실제 언어 변경 로직 추가 가능
+        }
+
+        function saveData() {
+            const data = {
+                date: new Date().toDateString(),
+                meals: {},
+                water: document.querySelectorAll('.water-cup.filled').length,
+                weight: document.getElementById('weight').value,
+                sleep: document.getElementById('sleep').value,
+                energy: document.getElementById('energyLevel').value,
+                exercise: document.getElementById('exercise').value,
+                dailyNote: document.getElementById('dailyNote').value,
+                weeklyNote: document.getElementById('weeklyNote').value,
+                weeklyPlan: {}
+            };
+
+            // 식사 데이터 저장
+            document.querySelectorAll('.meal-section').forEach(section => {
+                const meal = section.dataset.meal;
+                data.meals[meal] = {
+                    food: section.querySelector('[data-field="food"]').value,
+                    mood: section.querySelector('.mood-icon.selected')?.dataset.mood || null,
+                    memo: section.querySelector('[data-field="memo"]').value
+                };
+            });
+
+            // 주간 계획 데이터 저장
+            document.querySelectorAll('#weeklyTable input').forEach(input => {
+                const day = input.dataset.day;
+                const meal = input.dataset.meal;
+                if (!data.weeklyPlan[day]) data.weeklyPlan[day] = {};
+                data.weeklyPlan[day][meal] = input.value;
+            });
+
+            // 로컬 스토리지에 저장 (실제로는 메모리에 저장)
+            try {
+                const dataStr = JSON.stringify(data);
+                // localStorage.setItem('dietDiary', dataStr); // 실제 환경에서는 이 줄 사용
+                window.dietDiaryData = data; // 임시로 window 객체에 저장
+            } catch (error) {
+                console.log('데이터 저장 중 오류 발생:', error);
+            }
+        }
+
+        function loadData() {
+            try {
+                // const dataStr = localStorage.getItem('dietDiary'); // 실제 환경에서는 이 줄 사용
+                const data = window.dietDiaryData; // 임시로 window 객체에서 로드
+                
+                if (!data) return;
+
+                // 식사 데이터 로드
+                Object.keys(data.meals || {}).forEach(meal => {
+                    const section = document.querySelector(`[data-meal="${meal}"]`);
+                    if (section) {
+                        const mealData = data.meals[meal];
+                        section.querySelector('[data-field="food"]').value = mealData.food || '';
+                        section.querySelector('[data-field="memo"]').value = mealData.memo || '';
+                        
+                        if (mealData.mood) {
+                            section.querySelectorAll('.mood-icon').forEach(icon => {
+                                icon.classList.remove('selected');
+                            });
+                            section.querySelector(`[data-mood="${mealData.mood}"]`)?.classList.add('selected');
+                        }
+                    }
+                });
+
+                // 물 섭취량 로드
+                const waterCount = data.water || 0;
+                const cups = document.querySelectorAll('.water-cup');
+                cups.forEach((cup, index) => {
+                    if (index < waterCount) {
+                        cup.classList.add('filled');
+                    } else {
+                        cup.classList.remove('filled');
+                    }
+                });
+                updateWaterCount();
+
+                // 기타 데이터 로드
+                document.getElementById('weight').value = data.weight || '';
+                document.getElementById('sleep').value = data.sleep || '';
+                document.getElementById('energyLevel').value = data.energy || 3;
+                updateEnergyText(data.energy || 3);
+                document.getElementById('exercise').value = data.exercise || '';
+                document.getElementById('dailyNote').value = data.dailyNote || '';
+                document.getElementById('weeklyNote').value = data.weeklyNote || '';
+
+                // 주간 계획 데이터 로드
+                Object.keys(data.weeklyPlan || {}).forEach(day => {
+                    Object.keys(data.weeklyPlan[day] || {}).forEach(meal => {
+                        const input = document.querySelector(`[data-day="${day}"][data-meal="${meal}"]`);
+                        if (input) {
+                            input.value = data.weeklyPlan[day][meal] || '';
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.log('데이터 로드 중 오류 발생:', error);
+            }
+        }
+
+        function resetData() {
+            if (confirm('모든 데이터를 초기화하시겠습니까?')) {
+                // localStorage.removeItem('dietDiary'); // 실제 환경에서는 이 줄 사용
+                window.dietDiaryData = null; // 임시로 window 객체에서 삭제
+                
+                // 폼 초기화
+                document.querySelectorAll('input, textarea').forEach(element => {
+                    element.value = '';
+                });
+                
+                // 기분 아이콘 초기화
+                document.querySelectorAll('.mood-icon').forEach(icon => {
+                    icon.classList.remove('selected');
+                });
+                
+                // 물컵 초기화
+                document.querySelectorAll('.water-cup').forEach(cup => {
+                    cup.classList.remove('filled');
+                });
+                updateWaterCount();
+                
+                // 에너지 레벨 초기화
+                document.getElementById('energyLevel').value = 3;
+                updateEnergyText(3);
+                
+                alert('데이터가 초기화되었습니다.');
+            }
+        }
+
+        // 추가 기능: 데이터 내보내기 (선택사항)
+        function exportData() {
+            const data = window.dietDiaryData || {};
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diet-diary-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 추가 기능: 데이터 가져오기 (선택사항)
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    window.dietDiaryData = data;
+                    loadData();
+                    alert('데이터를 성공적으로 가져왔습니다.');
+                } catch (error) {
+                    alert('파일 형식이 올바르지 않습니다.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 키보드 단축키 (선택사항)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveData();
+                        break;
+                    case '1':
+                        e.preventDefault();
+                        switchTab('daily');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        switchTab('weekly');
+                        break;
+                }
+            }
+        });
+
+        // PWA 지원을 위한 서비스 워커 등록 (선택사항)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // 실제 환경에서는 서비스 워커 파일을 만들어 등록
+                console.log('PWA 기능을 추가하려면 서비스 워커를 구현하세요.');
+            });
+        }
+
+        // 터치 제스처 지원 (모바일)
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // 왼쪽으로 스와이프 - 주간 계획으로
+                    switchTab('weekly');
+                } else {
+                    // 오른쪽으로 스와이프 - 데일리로
+                    switchTab('daily');
+                }
+            }
+        }
+
+        // 반응형 디자인을 위한 화면 크기 감지
+        function handleResize() {
+            const isMobile = window.innerWidth < 768;
+            
+            if (isMobile) {
+                // 모바일에서는 테이블을 카드 형태로 변경 (선택사항)
+                document.querySelectorAll('.glass-card').forEach(card => {
+                    card.style.margin = '0.5rem 0';
+                });
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // 초기 실행
+
+        // 다크 모드 토글 (선택사항)
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            // localStorage.setItem('darkMode', isDark); // 실제 환경에서는 이 줄 사용
+        }
+
+        // 알림 및 리마인더 기능 (선택사항)
+        function setReminder() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'granted') {
+                        // 식사 시간 알림 설정
+                        const now = new Date();
+                        const nextMealTime = new Date(now);
+                        nextMealTime.setHours(12, 0, 0, 0); // 점심 시간 예시
+                        
+                        if (nextMealTime > now) {
+                            const timeUntilMeal = nextMealTime.getTime() - now.getTime();
+                            setTimeout(function() {
+                                new Notification('🍽️ 식사 시간이에요!', {
+                                    body: '오늘의 식사를 기록해보세요.',
+                                    icon: '/icon-192x192.png' // 실제 아이콘 경로
+                                });
+                            }, timeUntilMeal);
+                        }
+                    }
+                });
+            }
+        }
+
+        // 앱 초기화 시 알림 설정
+        // setReminder(); // 필요시 주석 해제
+    </script>
+</body>
+</html>
